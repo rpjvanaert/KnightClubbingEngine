@@ -1,21 +1,21 @@
 package knight.clubbing;
 
-import knight.clubbing.data.details.Color;
-import knight.clubbing.data.details.ThreatType;
-import knight.clubbing.data.move.Move;
-import knight.clubbing.logic.ChessGame;
+import knight.clubbing.core.BBoard;
+import knight.clubbing.core.BMove;
+import knight.clubbing.evaluation.Evaluation;
+import knight.clubbing.moveGeneration.MoveGenerator;
 
 public class MinimaxTask implements Runnable {
 
-    private final ChessGame game;
-    private final Move move;
+    private final BBoard board;
+    private final BMove move;
     private final int depth;
     private final boolean isMaximizing;
     private final ResultCollector collector;
     private final CancellationToken cancelToken;
 
-    public MinimaxTask(ChessGame game, Move move, int depth, boolean isMaximizing, ResultCollector collector, CancellationToken cancelToken) {
-        this.game = game;
+    public MinimaxTask(BBoard board, BMove move, int depth, boolean isMaximizing, ResultCollector collector, CancellationToken cancelToken) {
+        this.board = board;
         this.move = move;
         this.depth = depth;
         this.isMaximizing = isMaximizing;
@@ -27,7 +27,7 @@ public class MinimaxTask implements Runnable {
     public void run() {
         try {
             if (cancelToken.isCancelled()) return;
-            int score = minimax(game, depth, isMaximizing, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            int score = minimax(board, depth, isMaximizing, Integer.MIN_VALUE, Integer.MAX_VALUE);
             collector.report(move, score);
 
             if (score == Integer.MAX_VALUE || score == Integer.MIN_VALUE) {
@@ -38,25 +38,31 @@ public class MinimaxTask implements Runnable {
         }
     }
 
-    private int minimax(ChessGame game, int depth, boolean isMaximizing, int alpha, int beta) throws InterruptedException {
+    private int minimax(BBoard board, int depth, boolean isMaximizing, int alpha, int beta) throws InterruptedException {
         if (cancelToken.isCancelled()) return isMaximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
-        if (game.assessThreat(Color.WHITE).equals(ThreatType.CHECKMATE))
-            return Integer.MIN_VALUE;
-        if (game.assessThreat(Color.BLACK).equals(ThreatType.CHECKMATE))
-            return Integer.MAX_VALUE;
+        MoveGenerator moveGenerator = new MoveGenerator(board);
+        BMove[] moves = moveGenerator.generateMoves(false);
+
+        if (moves.length == 0) {
+            if (board.isInCheck())
+                return isMaximizing ? -1_000_000 : 1_000_000;
+            return 0;
+        }
+
         if (depth == 0) {
-            return game.getMaterialBalance();
+            return Evaluation.evaluate(board);
         }
 
         int bestScore = isMaximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
-        for (Move eachMove : game.determineAllLegalMoves()) {
+
+        for (BMove eachMove : moves) {
             if (cancelToken.isCancelled()) break;
 
-            ChessGame newGame = new ChessGame(game.getBoard().exportFEN());
-            newGame.executeMove(eachMove);
-            int score = minimax(newGame, depth - 1, !isMaximizing, alpha, beta);
+            BBoard nextBoard = new BBoard(board);
+            nextBoard.makeMove(eachMove, true);
+            int score = minimax(nextBoard, depth - 1, !isMaximizing, alpha, beta);
 
             if (isMaximizing) {
                 bestScore = Math.max(score, bestScore);

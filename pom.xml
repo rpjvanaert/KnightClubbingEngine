@@ -20,11 +20,17 @@
             <artifactId>KnightClubbingLogic</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-
         <dependency>
-            <groupId>io.github.tors42</groupId>
-            <artifactId>chariot</artifactId>
-            <version>0.1.14</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>1.10.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
@@ -36,6 +42,14 @@
                     <source>23</source>
                     <target>23</target>
                     <compilerArgs>--enable-preview</compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <excludedGroups>performance</excludedGroups>
                 </configuration>
             </plugin>
         </plugins>

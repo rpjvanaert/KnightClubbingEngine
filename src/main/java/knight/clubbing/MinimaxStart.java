@@ -1,8 +1,8 @@
 package knight.clubbing;
 
-import knight.clubbing.data.details.Color;
-import knight.clubbing.data.move.Move;
-import knight.clubbing.logic.ChessGame;
+import knight.clubbing.core.BBoard;
+import knight.clubbing.core.BMove;
+import knight.clubbing.moveGeneration.MoveGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,19 +20,21 @@ public class MinimaxStart {
         this.executor = executor;
     }
 
-    public Move findBestMove(ChessGame game) throws InterruptedException {
-        List<Move> legalMoves = game.determineAllLegalMoves();
+    public BMove findBestMove(BBoard board) throws InterruptedException {
+        MoveGenerator moveGenerator = new MoveGenerator(board);
+        BMove[] moves = moveGenerator.generateMoves(false);
+
         CancellationToken cancelToken = new CancellationToken();
-        ResultCollector collector = new ResultCollector(game.getBoard().getActive().equals(Color.WHITE));
+        ResultCollector collector = new ResultCollector(board.isWhiteToMove);
 
         List<Future<?>> futures = new ArrayList<>();
 
-        for (Move move : legalMoves) {
+        for (BMove move : moves) {
             if (cancelToken.isCancelled()) break;
 
-            ChessGame newGame = new ChessGame(game.getBoard().exportFEN());
-            newGame.executeMove(move);
-            MinimaxTask task = new MinimaxTask(newGame, move, maxDepth - 1, move.color().other().equals(Color.WHITE), collector, cancelToken);
+            BBoard nextBoard = new BBoard(board);
+            nextBoard.makeMove(move, true);
+            MinimaxTask task = new MinimaxTask(nextBoard, move, maxDepth - 1, nextBoard.isWhiteToMove, collector, cancelToken);
             futures.add(executor.submit(task));
         }
 

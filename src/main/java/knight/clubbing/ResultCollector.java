@@ -1,13 +1,12 @@
 package knight.clubbing;
 
-import knight.clubbing.data.move.Move;
-import knight.clubbing.data.move.MoveDraft;
+import knight.clubbing.core.BMove;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ResultCollector {
     private final boolean isMaximizing;
-    private volatile Move bestMove = null;
+    private volatile BMove bestMove = null;
     private final AtomicInteger bestScore;
 
     public ResultCollector(boolean isMaximizing) {
@@ -15,14 +14,14 @@ public class ResultCollector {
         this.bestScore = new AtomicInteger(isMaximizing? Integer.MIN_VALUE : Integer.MAX_VALUE);
     }
 
-    public synchronized void report(Move move, int score) {
+    public synchronized void report(BMove move, int score) {
         if ((isMaximizing && score > bestScore.get()) || (!isMaximizing && score < bestScore.get())) {
             bestScore.set(score);
             bestMove = move;
         }
     }
 
-    public Move getBestMove() {
+    public BMove getBestMove() {
         return bestMove;
     }
 

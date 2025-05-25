@@ -1,12 +1,12 @@
 package knight.clubbing;
 
-import knight.clubbing.logic.ChessGame;
+import knight.clubbing.core.BBoard;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class KnightClubbingEngine {
-    private static final int MAX_DEPTH = 6;
+    private static final int MAX_DEPTH = 7;
     private static final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     public static void main(String[] args) throws InterruptedException {
@@ -22,11 +22,17 @@ public class KnightClubbingEngine {
 
         // Mate in 3:
         // r5rk/5p1p/5R2/4B3/8/8/7P/7K w - - 0 1
-        ChessGame game = new ChessGame("r5rk/5p1p/5R2/4B3/8/8/7P/7K w - - 0 1");
+
+        //*
+        long start = System.currentTimeMillis();
+
+        BBoard game = new BBoard("r1bq1rk1/p1p1bppp/1pn1pn2/3p4/2PP4/2N1PN2/PP2BPPP/R1BQ1RK1 w - - 0 8");
 
         MinimaxStart minimaxStart = new MinimaxStart(MAX_DEPTH, executor);
 
         System.out.println("Best move: " + minimaxStart.findBestMove(game));
+        long stop = System.currentTimeMillis();
+        System.out.println("Time elapsed: " + (stop - start) + "ms");
         executor.shutdown();
     }
 }
