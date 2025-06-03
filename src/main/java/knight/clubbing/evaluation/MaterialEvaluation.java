@@ -5,11 +5,11 @@ import knight.clubbing.core.BPiece;
 
 public class MaterialEvaluation {
 
-    protected static final int PAWN_VALUE = 100;
-    protected static final int KNIGHT_VALUE = 320;
-    protected static final int BISHOP_VALUE = 330;
-    protected static final int ROOK_VALUE = 500;
-    protected static final int QUEEN_VALUE = 900;
+    public static final int PAWN_VALUE = 100;
+    public static final int KNIGHT_VALUE = 320;
+    public static final int BISHOP_VALUE = 330;
+    public static final int ROOK_VALUE = 500;
+    public static final int QUEEN_VALUE = 900;
 
     private static final int knightEgw = 10;
     private static final int bishopEgw = 10;
@@ -99,5 +99,16 @@ public class MaterialEvaluation {
 
     public float getEndgameT() {
         return endgameT;
+    }
+
+    public static int getValuePiece(int piece) {
+        return switch (BPiece.getPieceType(piece)) {
+            case BPiece.queen -> QUEEN_VALUE;
+            case BPiece.rook -> ROOK_VALUE;
+            case BPiece.bishop -> BISHOP_VALUE;
+            case BPiece.knight-> KNIGHT_VALUE;
+            case BPiece.pawn -> PAWN_VALUE;
+            default -> 0;
+        };
     }
 }

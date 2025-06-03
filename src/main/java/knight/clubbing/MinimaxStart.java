@@ -3,6 +3,8 @@ package knight.clubbing;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.moveGeneration.MoveGenerator;
+import knight.clubbing.moveOrdering.MoveOrdering;
+import knight.clubbing.moveOrdering.OrderStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.concurrent.Future;
 
 public class MinimaxStart {
 
+    public static final int MAX_THREADED_MOVES = 8;
     private final int maxDepth;
     private final ExecutorService executor;
 
@@ -29,13 +32,22 @@ public class MinimaxStart {
 
         List<Future<?>> futures = new ArrayList<>();
 
-        for (BMove move : moves) {
-            if (cancelToken.isCancelled()) break;
+        MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
 
+        int threadedMoveCount = Math.min(moves.length, MAX_THREADED_MOVES);
+
+        for (int i = 0; i < threadedMoveCount; i++) {
             BBoard nextBoard = new BBoard(board);
-            nextBoard.makeMove(move, true);
-            MinimaxTask task = new MinimaxTask(nextBoard, move, maxDepth - 1, nextBoard.isWhiteToMove, collector, cancelToken);
+            nextBoard.makeMove(moves[i], true);
+            MinimaxTask task = new MinimaxTask(nextBoard, moves[i], maxDepth - 1, nextBoard.isWhiteToMove, collector, cancelToken);
             futures.add(executor.submit(task));
+        }
+
+        for (int i = threadedMoveCount; i < moves.length; i++) {
+            BBoard nextBoard = new BBoard(board);
+            nextBoard.makeMove(moves[i], true);
+            int score = new MinimaxTask(nextBoard, moves[i], maxDepth - 1, nextBoard.isWhiteToMove, collector, cancelToken).minimax(nextBoard, maxDepth - 1, nextBoard.isWhiteToMove, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            collector.report(moves[i], score);
         }
 
         for (Future<?> future : futures) {

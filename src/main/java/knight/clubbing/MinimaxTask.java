@@ -4,6 +4,8 @@ import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.evaluation.Evaluation;
 import knight.clubbing.moveGeneration.MoveGenerator;
+import knight.clubbing.moveOrdering.MoveOrdering;
+import knight.clubbing.moveOrdering.OrderStrategy;
 
 public class MinimaxTask implements Runnable {
 
@@ -38,7 +40,7 @@ public class MinimaxTask implements Runnable {
         }
     }
 
-    private int minimax(BBoard board, int depth, boolean isMaximizing, int alpha, int beta) throws InterruptedException {
+    protected int minimax(BBoard board, int depth, boolean isMaximizing, int alpha, int beta) throws InterruptedException {
         if (cancelToken.isCancelled()) return isMaximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
         MoveGenerator moveGenerator = new MoveGenerator(board);
@@ -56,6 +58,7 @@ public class MinimaxTask implements Runnable {
 
         int bestScore = isMaximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
+        MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
 
         for (BMove eachMove : moves) {
             if (cancelToken.isCancelled()) break;

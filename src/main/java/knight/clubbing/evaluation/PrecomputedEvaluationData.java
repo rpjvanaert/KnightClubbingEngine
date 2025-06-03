@@ -7,8 +7,8 @@ import java.util.List;
 
 public class PrecomputedEvaluationData {
 
-    public static final int[][] pawnShieldSquaresWhite;
-    public static final int[][] pawnShieldSquaresBlack;
+    protected static final int[][] pawnShieldSquaresWhite;
+    protected static final int[][] pawnShieldSquaresBlack;
 
     static {
         pawnShieldSquaresWhite = new int[64][];
