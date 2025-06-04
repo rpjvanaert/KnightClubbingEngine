@@ -27,7 +27,7 @@ public abstract class AbstractScenarioTest {
         executor.shutdown();
     }
 
-    protected void runTest(BBoard game, BMove expected) throws InterruptedException {
+    protected void expectMoveInPosition(BBoard game, BMove expected) throws InterruptedException {
         MinimaxStart minimaxStart = new MinimaxStart(MAX_DEPTH, executor);
 
         BMove move = minimaxStart.findBestMove(game);
@@ -35,11 +35,11 @@ public abstract class AbstractScenarioTest {
         assertEquals(expected, move);
     }
 
-    protected void runTest(String fen, BMove expected) throws InterruptedException {
-        runTest(new BBoard(fen), expected);
+    protected void expectMoveInPosition(String fen, BMove expected) throws InterruptedException {
+        expectMoveInPosition(new BBoard(fen), expected);
     }
 
-    protected void runTest(String fen, String from, String to) throws InterruptedException {
-        runTest(fen, new BMove(BBoardHelper.stringCoordToIndex(from), BBoardHelper.stringCoordToIndex(to)));
+    protected void expectMoveInPosition(String fen, String from, String to) throws InterruptedException {
+        expectMoveInPosition(fen, new BMove(BBoardHelper.stringCoordToIndex(from), BBoardHelper.stringCoordToIndex(to)));
     }
 }

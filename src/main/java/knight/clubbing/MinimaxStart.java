@@ -27,9 +27,7 @@ public class MinimaxStart {
         MoveGenerator moveGenerator = new MoveGenerator(board);
         BMove[] moves = moveGenerator.generateMoves(false);
 
-        CancellationToken cancelToken = new CancellationToken();
         ResultCollector collector = new ResultCollector(board.isWhiteToMove);
-
         List<Future<?>> futures = new ArrayList<>();
 
         MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
@@ -39,14 +37,14 @@ public class MinimaxStart {
         for (int i = 0; i < threadedMoveCount; i++) {
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(moves[i], true);
-            MinimaxTask task = new MinimaxTask(nextBoard, moves[i], maxDepth - 1, nextBoard.isWhiteToMove, collector, cancelToken);
+            MinimaxTask task = new MinimaxTask(nextBoard, moves[i], maxDepth - 1, nextBoard.isWhiteToMove, collector);
             futures.add(executor.submit(task));
         }
 
         for (int i = threadedMoveCount; i < moves.length; i++) {
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(moves[i], true);
-            int score = new MinimaxTask(nextBoard, moves[i], maxDepth - 1, nextBoard.isWhiteToMove, collector, cancelToken).minimax(nextBoard, maxDepth - 1, nextBoard.isWhiteToMove, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            int score = new MinimaxTask(nextBoard, moves[i], maxDepth - 1, nextBoard.isWhiteToMove, collector).minimax(nextBoard, maxDepth - 1, nextBoard.isWhiteToMove, Integer.MIN_VALUE, Integer.MAX_VALUE);
             collector.report(moves[i], score);
         }
 

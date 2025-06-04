@@ -49,7 +49,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.1</version>
                 <configuration>
-                    <excludedGroups>performance</excludedGroups>
+                    <excludedGroups>strength</excludedGroups>
                 </configuration>
             </plugin>
         </plugins>

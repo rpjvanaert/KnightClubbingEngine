@@ -14,34 +14,26 @@ public class MinimaxTask implements Runnable {
     private final int depth;
     private final boolean isMaximizing;
     private final ResultCollector collector;
-    private final CancellationToken cancelToken;
 
-    public MinimaxTask(BBoard board, BMove move, int depth, boolean isMaximizing, ResultCollector collector, CancellationToken cancelToken) {
+    public MinimaxTask(BBoard board, BMove move, int depth, boolean isMaximizing, ResultCollector collector) {
         this.board = board;
         this.move = move;
         this.depth = depth;
         this.isMaximizing = isMaximizing;
         this.collector = collector;
-        this.cancelToken = cancelToken;
     }
 
     @Override
     public void run() {
         try {
-            if (cancelToken.isCancelled()) return;
             int score = minimax(board, depth, isMaximizing, Integer.MIN_VALUE, Integer.MAX_VALUE);
             collector.report(move, score);
-
-            if (score == Integer.MAX_VALUE || score == Integer.MIN_VALUE) {
-                cancelToken.cancel();
-            }
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
     }
 
     protected int minimax(BBoard board, int depth, boolean isMaximizing, int alpha, int beta) throws InterruptedException {
-        if (cancelToken.isCancelled()) return isMaximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
         MoveGenerator moveGenerator = new MoveGenerator(board);
         BMove[] moves = moveGenerator.generateMoves(false);
@@ -52,16 +44,14 @@ public class MinimaxTask implements Runnable {
             return 0;
         }
 
-        if (depth == 0) {
-            return Evaluation.evaluate(board);
-        }
+        if (depth == 0)
+            return quiesce(board, isMaximizing, alpha, beta);
 
         int bestScore = isMaximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
         MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
 
         for (BMove eachMove : moves) {
-            if (cancelToken.isCancelled()) break;
 
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(eachMove, true);
@@ -81,5 +71,37 @@ public class MinimaxTask implements Runnable {
         }
 
         return bestScore;
+    }
+
+    private int quiesce(BBoard board, boolean isMaximizing, int alpha, int beta) throws InterruptedException {
+        int standPat = Evaluation.evaluate(board);
+
+        if (isMaximizing) {
+            if (standPat >= beta) return beta;
+            if (standPat > alpha) alpha = standPat;
+        } else {
+            if (standPat <= alpha) return alpha;
+            if (standPat < beta) beta = standPat;
+        }
+
+        BMove[] captures = new MoveGenerator(board).generateMoves(true);
+        MoveOrdering.orderMoves(board, captures, OrderStrategy.MVV_LVA);
+
+        for (BMove eachMove : captures) {
+            BBoard nextBoard = new BBoard(board);
+            nextBoard.makeMove(eachMove, true);
+            int score = quiesce(nextBoard, !isMaximizing, alpha, beta);
+
+            if (isMaximizing) {
+                if (score > alpha) alpha = score;
+            } else {
+                if (score < beta) beta = score;
+            }
+
+            if (beta <= alpha)
+                break;
+        }
+
+        return isMaximizing ? alpha : beta;
     }
 }
