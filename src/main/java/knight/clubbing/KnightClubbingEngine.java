@@ -18,7 +18,7 @@ public class KnightClubbingEngine {
 
         BBoard game = new BBoard("r1bq1rk1/p1p1bppp/1pn1pn2/3p4/2PP4/2N1PN2/PP2BPPP/R1BQ1RK1 w - - 0 8");
 
-        MinimaxStart minimaxStart = new MinimaxStart(MAX_DEPTH, executor);
+        NegaMaxStart minimaxStart = new NegaMaxStart(MAX_DEPTH, executor);
 
         System.out.println("Best move: " + minimaxStart.findBestMove(game));
         long stop = System.currentTimeMillis();

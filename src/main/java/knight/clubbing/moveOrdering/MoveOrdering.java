@@ -2,7 +2,6 @@ package knight.clubbing.moveOrdering;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
-import knight.clubbing.core.BPiece;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -10,6 +9,8 @@ import java.util.Comparator;
 import static knight.clubbing.evaluation.MaterialEvaluation.*;
 
 public class MoveOrdering {
+
+    private MoveOrdering() {}
 
     public static void orderMoves(BBoard board, BMove[] moves, OrderStrategy strategy) {
         switch (strategy) {
@@ -34,12 +35,17 @@ public class MoveOrdering {
             score += 900 + getValuePiece(move.promotionPieceType());
 
         if (board.isInCheck())
-            score += 100;
+            score -= 100;
 
         int targetSquare = move.targetSquare();
 
         if (targetSquare >= 27 && targetSquare <= 36)
             score += 25;
+
+        board.makeMove(move, true);
+        if (board.isInCheck())
+            score += 420;
+        board.undoMove(move, true);
 
         return score;
     }

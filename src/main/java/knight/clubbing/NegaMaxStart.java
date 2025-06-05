@@ -12,13 +12,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-public class MinimaxStart {
+import static knight.clubbing.EngineConst.MAX_THREADED_MOVES;
+import static knight.clubbing.EngineConst.NEGAMAX_INF;
 
-    public static final int MAX_THREADED_MOVES = 8;
+public class NegaMaxStart {
+
     private final int maxDepth;
     private final ExecutorService executor;
 
-    public MinimaxStart(int maxDepth, ExecutorService executor) {
+    public NegaMaxStart(int maxDepth, ExecutorService executor) {
         this.maxDepth = maxDepth;
         this.executor = executor;
     }
@@ -27,7 +29,7 @@ public class MinimaxStart {
         MoveGenerator moveGenerator = new MoveGenerator(board);
         BMove[] moves = moveGenerator.generateMoves(false);
 
-        ResultCollector collector = new ResultCollector(board.isWhiteToMove);
+        ResultCollector collector = new ResultCollector();
         List<Future<?>> futures = new ArrayList<>();
 
         MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
@@ -37,14 +39,14 @@ public class MinimaxStart {
         for (int i = 0; i < threadedMoveCount; i++) {
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(moves[i], true);
-            MinimaxTask task = new MinimaxTask(nextBoard, moves[i], maxDepth - 1, nextBoard.isWhiteToMove, collector);
+            NegaMaxTask task = new NegaMaxTask(nextBoard, moves[i], maxDepth - 1, collector);
             futures.add(executor.submit(task));
         }
 
         for (int i = threadedMoveCount; i < moves.length; i++) {
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(moves[i], true);
-            int score = new MinimaxTask(nextBoard, moves[i], maxDepth - 1, nextBoard.isWhiteToMove, collector).minimax(nextBoard, maxDepth - 1, nextBoard.isWhiteToMove, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            int score = - new NegaMaxTask(nextBoard, moves[i], maxDepth - 1, collector).negamax(nextBoard, maxDepth - 1, -NEGAMAX_INF, NEGAMAX_INF);
             collector.report(moves[i], score);
         }
 

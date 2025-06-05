@@ -20,7 +20,8 @@ public class Evaluation {
         EvaluationData whiteEvaluationData = new EvaluationData(whiteMaterialEvaluation.getMaterialScore(), pstEvalWhite);
         EvaluationData blackEvaluationData = new EvaluationData(blackMaterialEvaluation.getMaterialScore(), pstEvalBlack);
 
-        return whiteEvaluationData.sum() - blackEvaluationData.sum();
+        int score = whiteEvaluationData.sum() - blackEvaluationData.sum();
+        return board.isWhiteToMove ? score : -score;
     }
 
     private static int pstEvaluation(BBoard board, boolean isWhite, float endGameT) {

@@ -28,7 +28,7 @@ public abstract class AbstractScenarioTest {
     }
 
     protected void expectMoveInPosition(BBoard game, BMove expected) throws InterruptedException {
-        MinimaxStart minimaxStart = new MinimaxStart(MAX_DEPTH, executor);
+        NegaMaxStart minimaxStart = new NegaMaxStart(MAX_DEPTH, executor);
 
         BMove move = minimaxStart.findBestMove(game);
 

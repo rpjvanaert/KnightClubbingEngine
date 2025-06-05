@@ -13,6 +13,12 @@ class MateTest extends AbstractScenarioTest {
 
     @Test
     @Tag("strength")
+    void mateIn1_2() throws InterruptedException {
+        expectMoveInPosition("4rb2/3qrk2/1p1p1n2/7p/P2P4/4R2P/1BQN1P2/1K4R1 w - - 3 39", "c2", "g6");
+    }
+
+    @Test
+    @Tag("strength")
     void mateIn2_1() throws InterruptedException {
         expectMoveInPosition("r1bq2r1/b4pk1/p1pp1p2/1p2pP2/1P2P1PB/3P4/1PPQ2P1/R3K2R w - - 0 1", "d2", "h6");
     }
