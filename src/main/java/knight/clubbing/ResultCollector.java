@@ -4,9 +4,12 @@ import knight.clubbing.core.BMove;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static knight.clubbing.EngineConst.MATE_SCORE;
+
 public class ResultCollector {
     private BMove bestMove = null;
     private final AtomicInteger bestScore;
+    private boolean cancelled = false;
 
     public ResultCollector() {
         this.bestScore = new AtomicInteger(Integer.MIN_VALUE);
@@ -16,7 +19,14 @@ public class ResultCollector {
         if (score > bestScore.get()) {
             bestScore.set(score);
             bestMove = move;
+
+            if (score >= MATE_SCORE)
+                cancelled = true;
         }
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
     }
 
     public BMove getBestMove() {

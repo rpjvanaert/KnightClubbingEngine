@@ -37,6 +37,8 @@ public class NegaMaxStart {
         int threadedMoveCount = Math.min(moves.length, MAX_THREADED_MOVES);
 
         for (int i = 0; i < threadedMoveCount; i++) {
+            if (collector.isCancelled()) break;
+
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(moves[i], true);
             NegaMaxTask task = new NegaMaxTask(nextBoard, moves[i], maxDepth - 1, collector);
@@ -44,6 +46,8 @@ public class NegaMaxStart {
         }
 
         for (int i = threadedMoveCount; i < moves.length; i++) {
+            if (collector.isCancelled()) break;
+
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(moves[i], true);
             int score = - new NegaMaxTask(nextBoard, moves[i], maxDepth - 1, collector).negamax(nextBoard, maxDepth - 1, -NEGAMAX_INF, NEGAMAX_INF);
@@ -51,6 +55,10 @@ public class NegaMaxStart {
         }
 
         for (Future<?> future : futures) {
+            if (collector.isCancelled()) {
+                future.cancel(true);
+                continue;
+            }
             try {
                 future.get();
             } catch (ExecutionException e) {
