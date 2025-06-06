@@ -1,4 +1,4 @@
-package knight.clubbing;
+package knight.clubbing.search;
 
 public class EngineConst {
 

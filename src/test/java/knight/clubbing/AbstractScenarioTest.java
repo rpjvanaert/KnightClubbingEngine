@@ -3,6 +3,7 @@ package knight.clubbing;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BBoardHelper;
 import knight.clubbing.core.BMove;
+import knight.clubbing.search.NegaMaxStart;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 

@@ -1,4 +1,4 @@
-package knight.clubbing;
+package knight.clubbing.search;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
@@ -12,13 +12,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static knight.clubbing.EngineConst.MAX_THREADED_MOVES;
-import static knight.clubbing.EngineConst.NEGAMAX_INF;
+import static knight.clubbing.search.EngineConst.MAX_THREADED_MOVES;
+import static knight.clubbing.search.EngineConst.NEGAMAX_INF;
 
 public class NegaMaxStart {
 
     private final int maxDepth;
     private final ExecutorService executor;
+    
+    private volatile boolean stopped = false;
 
     public NegaMaxStart(int maxDepth, ExecutorService executor) {
         this.maxDepth = maxDepth;
@@ -37,7 +39,7 @@ public class NegaMaxStart {
         int threadedMoveCount = Math.min(moves.length, MAX_THREADED_MOVES);
 
         for (int i = 0; i < threadedMoveCount; i++) {
-            if (collector.isCancelled()) break;
+            if (this.checkToCancel(collector)) break;
 
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(moves[i], true);
@@ -46,7 +48,7 @@ public class NegaMaxStart {
         }
 
         for (int i = threadedMoveCount; i < moves.length; i++) {
-            if (collector.isCancelled()) break;
+            if (this.checkToCancel(collector)) break;
 
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(moves[i], true);
@@ -55,16 +57,32 @@ public class NegaMaxStart {
         }
 
         for (Future<?> future : futures) {
-            if (collector.isCancelled()) {
+            if (this.checkToCancel(collector)) {
                 future.cancel(true);
+                collector.cancel();
                 continue;
             }
             try {
                 future.get();
             } catch (ExecutionException e) {
                 e.printStackTrace();
+            } catch (InterruptedException e) {
+                for (Future<?> f : futures)
+                    f.cancel(true);
+
+                collector.cancel();
+                Thread.currentThread().interrupt();
+                break;
             }
         }
         return collector.getBestMove();
+    }
+
+    private boolean checkToCancel(ResultCollector collector) {
+        return stopped ||  collector.isCancelled() || Thread.interrupted();
+    }
+
+    public void stop() {
+        stopped = true;
     }
 }

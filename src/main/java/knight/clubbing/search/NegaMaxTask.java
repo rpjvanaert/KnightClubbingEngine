@@ -1,4 +1,4 @@
-package knight.clubbing;
+package knight.clubbing.search;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
@@ -7,8 +7,8 @@ import knight.clubbing.moveGeneration.MoveGenerator;
 import knight.clubbing.moveOrdering.MoveOrdering;
 import knight.clubbing.moveOrdering.OrderStrategy;
 
-import static knight.clubbing.EngineConst.MATE_SCORE;
-import static knight.clubbing.EngineConst.NEGAMAX_INF;
+import static knight.clubbing.search.EngineConst.MATE_SCORE;
+import static knight.clubbing.search.EngineConst.NEGAMAX_INF;
 
 public class NegaMaxTask implements Runnable {
 
@@ -94,6 +94,6 @@ public class NegaMaxTask implements Runnable {
     }
 
     private void checkThread() throws InterruptedException {
-        if (Thread.interrupted()) throw new InterruptedException();
+        if (Thread.interrupted() || collector.isCancelled()) throw new InterruptedException();
     }
 }

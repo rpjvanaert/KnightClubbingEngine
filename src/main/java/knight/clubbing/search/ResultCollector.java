@@ -1,10 +1,10 @@
-package knight.clubbing;
+package knight.clubbing.search;
 
 import knight.clubbing.core.BMove;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static knight.clubbing.EngineConst.MATE_SCORE;
+import static knight.clubbing.search.EngineConst.MATE_SCORE;
 
 public class ResultCollector {
     private BMove bestMove = null;
@@ -23,6 +23,10 @@ public class ResultCollector {
             if (score >= MATE_SCORE)
                 cancelled = true;
         }
+    }
+
+    public void cancel() {
+        cancelled = true;
     }
 
     public boolean isCancelled() {
