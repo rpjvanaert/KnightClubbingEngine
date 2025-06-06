@@ -38,44 +38,62 @@ public class NegaMaxStart {
 
         int threadedMoveCount = Math.min(moves.length, MAX_THREADED_MOVES);
 
-        for (int i = 0; i < threadedMoveCount; i++) {
-            if (this.checkToCancel(collector)) break;
+        runParallelSearches(board, threadedMoveCount, collector, futures, moves);
+        runSynchronousSearches(board, threadedMoveCount, moves, collector);
 
-            BBoard nextBoard = new BBoard(board);
-            nextBoard.makeMove(moves[i], true);
-            NegaMaxTask task = new NegaMaxTask(nextBoard, moves[i], maxDepth - 1, collector);
-            futures.add(executor.submit(task));
-        }
+        waitForFutures(futures, collector);
 
-        for (int i = threadedMoveCount; i < moves.length; i++) {
-            if (this.checkToCancel(collector)) break;
+        return collector.getBestMove();
+    }
 
-            BBoard nextBoard = new BBoard(board);
-            nextBoard.makeMove(moves[i], true);
-            int score = - new NegaMaxTask(nextBoard, moves[i], maxDepth - 1, collector).negamax(nextBoard, maxDepth - 1, -NEGAMAX_INF, NEGAMAX_INF);
-            collector.report(moves[i], score);
-        }
-
+    private void waitForFutures(List<Future<?>> futures, ResultCollector collector) {
         for (Future<?> future : futures) {
             if (this.checkToCancel(collector)) {
                 future.cancel(true);
                 collector.cancel();
-                continue;
-            }
-            try {
-                future.get();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                for (Future<?> f : futures)
-                    f.cancel(true);
+            } else {
+                try {
+                    future.get();
+                } catch (ExecutionException | InterruptedException _) {
+                    for (Future<?> f : futures)
+                        f.cancel(true);
 
-                collector.cancel();
-                Thread.currentThread().interrupt();
-                break;
+                    collector.cancel();
+                    Thread.currentThread().interrupt();
+                    break;
+                }
             }
         }
-        return collector.getBestMove();
+    }
+
+    private void runSynchronousSearches(BBoard board, int threadedMoveCount, BMove[] moves, ResultCollector collector) throws InterruptedException {
+        for (int i = threadedMoveCount; i < moves.length; i++) {
+            if (this.checkToCancel(collector)) break;
+
+            startSearch(board, collector, moves[i]);
+        }
+    }
+
+    private void runParallelSearches(BBoard board, int threadedMoveCount, ResultCollector collector, List<Future<?>> futures, BMove[] moves) {
+        for (int i = 0; i < threadedMoveCount; i++) {
+            if (this.checkToCancel(collector)) break;
+
+            startThreadedSearch(board, collector, futures, moves[i]);
+        }
+    }
+
+    private void startSearch(BBoard board, ResultCollector collector, BMove moves) throws InterruptedException {
+        BBoard nextBoard = new BBoard(board);
+        nextBoard.makeMove(moves, true);
+        int score = - new NegaMaxTask(nextBoard, moves, maxDepth - 1, collector).negamax(nextBoard, maxDepth - 1, -NEGAMAX_INF, NEGAMAX_INF);
+        collector.report(moves, score);
+    }
+
+    private void startThreadedSearch(BBoard board, ResultCollector collector, List<Future<?>> futures, BMove moves) {
+        BBoard nextBoard = new BBoard(board);
+        nextBoard.makeMove(moves, true);
+        NegaMaxTask task = new NegaMaxTask(nextBoard, moves, maxDepth - 1, collector);
+        futures.add(executor.submit(task));
     }
 
     private boolean checkToCancel(ResultCollector collector) {

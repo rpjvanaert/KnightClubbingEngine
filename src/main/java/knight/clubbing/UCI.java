@@ -7,17 +7,17 @@ import knight.clubbing.search.NegaMaxStart;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 import static knight.clubbing.search.EngineConst.MAX_THREADED_MOVES;
 
 public class UCI {
 
+    private final Logger logger = Logger.getLogger(getClass().getName());
+
     private BBoard board;
     private Thread searchThread;
     private NegaMaxStart searchStart;
-
-    public UCI() {
-    }
 
     public void run() {
         Scanner scanner = new Scanner(System.in);
@@ -32,13 +32,13 @@ public class UCI {
     private void handleCommand(String line) {
         switch (line) {
             case "uci": {
-                System.out.println("id name KnightClubbing");
-                System.out.println("id author Ralf van Aert");
-                System.out.println("uciok");
+                logger.info("id name KnightClubbing");
+                logger.info("id author Ralf van Aert");
+                logger.info("uciok");
                 break;
             }
             case "isready": {
-                System.out.println("readyok");
+                logger.info("readyok");
                 break;
             }
             case "stop": {
@@ -103,9 +103,10 @@ public class UCI {
         searchThread = new Thread(() -> {
             try {
                 BMove move = searchStart.findBestMove(board);
-                System.out.println("bestmove " + move.getUci());
-            } catch (InterruptedException e) {
-                System.out.println("Interrupted...");
+                logger.info("bestmove " + move.getUci());
+            } catch (InterruptedException _) {
+                logger.info("Interrupted...");
+                Thread.currentThread().interrupt();
             } finally {
                 executor.shutdownNow();
             }
