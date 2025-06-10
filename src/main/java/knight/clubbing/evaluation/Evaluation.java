@@ -1,13 +1,14 @@
 package knight.clubbing.evaluation;
 
-import knight.clubbing.core.BBoard;
-import knight.clubbing.core.BCoord;
-import knight.clubbing.core.BPiece;
-import knight.clubbing.core.PopLsbResult;
+import knight.clubbing.core.*;
 
 public class Evaluation {
 
     protected static final int[][] pst = new int[BPiece.maxPieceIndex + 1][64];
+
+    private static final int[] passedPawnBonuses = { 0, 120, 80, 50, 30, 15, 15 };
+    private static final int[] isolatedPawnPenaltyByCount = { 0, -10, -25, -50, -75, -75, -75, -75, -75 };
+    private static final int[] kingPawnShieldScores  = { 4, 7, 4, 3, 6, 3 };
 
     public static int evaluate(BBoard board) {
         MaterialEvaluation whiteMaterialEvaluation = MaterialEvaluation.getMaterialEvaluation(board, true);
@@ -16,12 +17,15 @@ public class Evaluation {
         int pstEvalWhite = pstEvaluation(board, true, whiteMaterialEvaluation.getEndgameT());
         int pstEvalBlack = pstEvaluation(board, false, blackMaterialEvaluation.getEndgameT());
 
+        int pawnScoreWhite = evaluatePawns(board, true);
+        int pawnScoreBlack = evaluatePawns(board, false);
 
-        EvaluationData whiteEvaluationData = new EvaluationData(whiteMaterialEvaluation.getMaterialScore(), pstEvalWhite);
-        EvaluationData blackEvaluationData = new EvaluationData(blackMaterialEvaluation.getMaterialScore(), pstEvalBlack);
+        EvaluationData whiteEvaluationData = new EvaluationData(whiteMaterialEvaluation.getMaterialScore(), pstEvalWhite, pawnScoreWhite);
+        EvaluationData blackEvaluationData = new EvaluationData(blackMaterialEvaluation.getMaterialScore(), pstEvalBlack, pawnScoreBlack);
 
         int score = whiteEvaluationData.sum() - blackEvaluationData.sum();
-        return board.isWhiteToMove ? score : -score;
+        int moveColorMult = board.isWhiteToMove ? 1 : -1;
+        return score * moveColorMult;
     }
 
     private static int pstEvaluation(BBoard board, boolean isWhite, float endGameT) {
@@ -196,6 +200,35 @@ public class Evaluation {
         BCoord coord = new BCoord(squareIndex);
         BCoord mirrorCoord = new BCoord(coord.getFileIndex(), 7 - coord.getRankIndex());
         return mirrorCoord.getSquareIndex();
+    }
+
+    protected static int evaluatePawns(BBoard board, boolean isWhite) {
+        long opponentPawns = board.getBitboard(BPiece.makePiece(BPiece.pawn, !isWhite));
+        long friendlyPawns = board.getBitboard(BPiece.makePiece(BPiece.pawn, isWhite));
+        long oFriendlyPawns = friendlyPawns;
+        long[] passedPawnMasks = isWhite ? PrecomputedEvaluationData.getWhitePassedPawnMask() : PrecomputedEvaluationData.getBlackPassedPawnMask();
+        int bonus = 0;
+        int numIsoloatedPawns = 0;
+
+        while (friendlyPawns > 0) {
+            PopLsbResult popLsbResult = PopLsbResult.popLsb(friendlyPawns);
+            int square = popLsbResult.index;
+            friendlyPawns = popLsbResult.remaining;
+            long passedMask = passedPawnMasks[square];
+
+            if ((opponentPawns & passedMask) == 0) {
+                int rank = BBoardHelper.rankIndex(square);
+                int numSquaresFromPromotion = isWhite ? 7 - rank : rank;
+                bonus += passedPawnBonuses[numSquaresFromPromotion];
+            }
+
+            if ((oFriendlyPawns & PrecomputedEvaluationData.getAdjacentFileMask()[BBoardHelper.fileIndex(square)]) == 0) {
+                numIsoloatedPawns++;
+            }
+            
+        }
+
+        return bonus + isolatedPawnPenaltyByCount[numIsoloatedPawns];
     }
 
     private Evaluation() {}

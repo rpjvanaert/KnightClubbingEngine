@@ -2,7 +2,7 @@ package knight.clubbing;
 
 public class KnightClubbingEngine {
 
-    void main() {
+    public static void main(String[] args) {
         UCI uci = new UCI();
         uci.run();
     }

@@ -1,7 +1,9 @@
 package knight.clubbing.moveOrdering;
 
 import knight.clubbing.core.BBoard;
+import knight.clubbing.core.BBoardHelper;
 import knight.clubbing.core.BMove;
+import knight.clubbing.core.BPiece;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -46,6 +48,12 @@ public class MoveOrdering {
         if (board.isInCheck())
             score += 420;
         board.undoMove(move, true);
+
+        if (move.isCastle())
+            score += 50;
+
+        if (move.isPawnTwoUp())
+            score += 50;
 
         return score;
     }

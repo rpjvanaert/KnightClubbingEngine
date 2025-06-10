@@ -43,27 +43,36 @@ public class NegaMaxStart {
 
         waitForFutures(futures, collector);
 
-        return collector.getBestMove();
+        BMove bestMove = collector.getBestMove();
+        return bestMove != null ? bestMove : moves[0];
     }
 
     private void waitForFutures(List<Future<?>> futures, ResultCollector collector) {
         for (Future<?> future : futures) {
-            if (this.checkToCancel(collector)) {
-                future.cancel(true);
+            if (checkToCancel(collector)) {
+                cancelAllFutures(futures);
                 collector.cancel();
-            } else {
-                try {
-                    future.get();
-                } catch (ExecutionException | InterruptedException _) {
-                    for (Future<?> f : futures)
-                        f.cancel(true);
+                break;
+            }
 
-                    collector.cancel();
-                    Thread.currentThread().interrupt();
+            try {
+                future.get();
+
+                if (collector.isMateFound()) {
+                    cancelAllFutures(futures);
                     break;
                 }
+            } catch (InterruptedException | ExecutionException e) {
+                cancelAllFutures(futures);
+                collector.cancel();
+                Thread.currentThread().interrupt();
+                break;
             }
         }
+    }
+
+    private void cancelAllFutures(List<Future<?>> futures) {
+        for (Future<?> future : futures) future.cancel(true);
     }
 
     private void runSynchronousSearches(BBoard board, int threadedMoveCount, BMove[] moves, ResultCollector collector) throws InterruptedException {
@@ -97,7 +106,7 @@ public class NegaMaxStart {
     }
 
     private boolean checkToCancel(ResultCollector collector) {
-        return stopped ||  collector.isCancelled() || Thread.interrupted();
+        return stopped ||  collector.isCancelled() || Thread.currentThread().isInterrupted();
     }
 
     public void stop() {

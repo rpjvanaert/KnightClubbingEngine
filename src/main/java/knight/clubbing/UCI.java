@@ -4,20 +4,33 @@ import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.search.NegaMaxStart;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.time.Instant;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
+import static knight.clubbing.search.EngineConst.DEFAULT_DEPTH;
 import static knight.clubbing.search.EngineConst.MAX_THREADED_MOVES;
 
 public class UCI {
 
+    public static final String COMMAND_LOG = "command.log";
+    public static final String BOARD_LOG = "board.log";
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(MAX_THREADED_MOVES);
 
     private BBoard board;
     private Thread searchThread;
     private NegaMaxStart searchStart;
+
+    protected BBoard getBoard() {
+        return board;
+    }
 
     public void run() {
         Scanner scanner = new Scanner(System.in);
@@ -29,16 +42,18 @@ public class UCI {
         }
     }
 
-    private void handleCommand(String line) {
+    protected void handleCommand(String line) {
+        logText(line, COMMAND_LOG);
+
         switch (line) {
             case "uci": {
-                logger.info("id name KnightClubbing");
-                logger.info("id author Ralf van Aert");
-                logger.info("uciok");
+                System.out.println("id name KnightClubbing");
+                System.out.println("id author Ralf van Aert");
+                System.out.println("uciok");
                 break;
             }
             case "isready": {
-                logger.info("readyok");
+                System.out.println("readyok");
                 break;
             }
             case "stop": {
@@ -63,7 +78,14 @@ public class UCI {
         }
     }
 
-    private void handlePosition(String line) {
+    private void logText(String text, String location) {
+        try (PrintWriter log = new PrintWriter(new FileWriter(location, true))) {
+            log.println(text);
+        } catch (IOException _) {
+        }
+    }
+
+    protected void handlePosition(String line) {
         String[] parts = line.split(" ");
         int index = 1;
 
@@ -79,14 +101,28 @@ public class UCI {
 
         if (index < parts.length && parts[index].equals("moves")) {
             for (int i = index + 1; i < parts.length; i++) {
-                BMove move = BMove.fromUci(parts[i], board);
-                board.makeMove(move, true);
+                try {
+                    BMove move = BMove.fromUci(parts[i], board);
+                    board.makeMove(move, true);
+                } catch (Exception e) {
+                    logger.warning("Invalid move in position command: " + parts[i]);
+                    logger.warning(e.getMessage());
+                }
+
             }
         }
+
+        /*
+        logText("--------", BOARD_LOG);
+        logText(line, BOARD_LOG);
+        logText(board.exportFen(), BOARD_LOG);
+        logText(board.getDisplay(), BOARD_LOG);
+        logText("--------", BOARD_LOG);
+         */
     }
 
-    private void handleGo(String line) {
-        int depth = 8;
+    protected void handleGo(String line) {
+        int depth = DEFAULT_DEPTH;
 
         if (line.contains("depth")) {
             String[] parts = line.split(" ");
@@ -97,20 +133,35 @@ public class UCI {
                 }
             }
         }
-        ExecutorService executor = Executors.newFixedThreadPool(MAX_THREADED_MOVES);
         searchStart = new NegaMaxStart(depth, executor);
 
+
         searchThread = new Thread(() -> {
+            BMove move = null;
             try {
-                BMove move = searchStart.findBestMove(board);
-                logger.info("bestmove " + move.getUci());
-            } catch (InterruptedException _) {
-                logger.info("Interrupted...");
+                move = searchStart.findBestMove(board);
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+            } catch (Throwable t) {
+                t.printStackTrace();
+                try (PrintWriter log = new PrintWriter(new FileWriter("engine_crash.log", true))) {
+                    t.printStackTrace(log);
+                    StringBuilder stringBuilder = new StringBuilder();
+                    stringBuilder.append("FEN: ").append(board.exportFen()).append("\n");
+                    stringBuilder.append("Time: ").append(Instant.now()).append("\n");
+                    stringBuilder.append("------\n");
+                    String string = stringBuilder.toString();
+                    log.println(string);
+                } catch (IOException _) {}
             } finally {
-                executor.shutdownNow();
+                if (move != null) {
+                    System.out.println("bestmove " + move.getUci());
+                } else {
+                    System.out.println("bestmove 0000"); // signal to lichess-bot that move is invalid
+                }
             }
         });
+
 
         searchThread.start();
     }

@@ -9,7 +9,8 @@ import static knight.clubbing.search.EngineConst.MATE_SCORE;
 public class ResultCollector {
     private BMove bestMove = null;
     private final AtomicInteger bestScore;
-    private boolean cancelled = false;
+    private boolean isMateFound = false;
+    private boolean isCancelled = false;
 
     public ResultCollector() {
         this.bestScore = new AtomicInteger(Integer.MIN_VALUE);
@@ -21,16 +22,24 @@ public class ResultCollector {
             bestMove = move;
 
             if (score >= MATE_SCORE)
-                cancelled = true;
+                isMateFound = true;
         }
     }
 
     public void cancel() {
-        cancelled = true;
+        isCancelled = true;
     }
 
     public boolean isCancelled() {
-        return cancelled;
+        return isCancelled;
+    }
+
+    public void mateFound() {
+        isMateFound = true;
+    }
+
+    public boolean isMateFound() {
+        return isMateFound;
     }
 
     public BMove getBestMove() {

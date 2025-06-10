@@ -26,6 +26,8 @@ public class NegaMaxTask implements Runnable {
 
     @Override
     public void run() {
+        if (collector.isCancelled() || collector.isMateFound()) return;
+
         try {
             int score = -negamax(board, depth, -NEGAMAX_INF, NEGAMAX_INF);
             collector.report(move, score);
@@ -59,7 +61,8 @@ public class NegaMaxTask implements Runnable {
         MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
 
         for (BMove eachMove : moves) {
-            this.checkThread();
+            if (collector.isCancelled()) return alpha;
+
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(eachMove, true);
             int score = -negamax(nextBoard, depth - 1, -beta, -alpha);
@@ -81,8 +84,15 @@ public class NegaMaxTask implements Runnable {
         BMove[] captures = new MoveGenerator(board).generateMoves(true);
         MoveOrdering.orderMoves(board, captures, OrderStrategy.MVV_LVA);
 
+        if (captures.length == 0) {
+            if (board.isInCheck())
+                return -MATE_SCORE - depth;
+            return 0;
+        }
+
         for (BMove eachMove : captures) {
-            this.checkThread();
+            if (collector.isCancelled()) return alpha;
+
             BBoard nextBoard = new BBoard(board);
             nextBoard.makeMove(eachMove, true);
             int score = -quiesce(nextBoard, -beta, -alpha);
@@ -91,9 +101,5 @@ public class NegaMaxTask implements Runnable {
         }
 
         return alpha;
-    }
-
-    private void checkThread() throws InterruptedException {
-        if (Thread.interrupted() || collector.isCancelled()) throw new InterruptedException();
     }
 }
