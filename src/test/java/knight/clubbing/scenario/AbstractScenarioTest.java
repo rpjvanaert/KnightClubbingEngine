@@ -1,4 +1,4 @@
-package knight.clubbing;
+package knight.clubbing.scenario;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BBoardHelper;

@@ -38,4 +38,13 @@ class EvaluationTest {
         assertEquals(Evaluation.evaluate(boardOriginal), Evaluation.evaluate(boardFlipped));
     }
 
+    @Test
+    void testEvaluateKnightOnRim() {
+        BBoard boardNf3 = new BBoard("rnbqkbnr/ppp1pppp/3p4/8/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 0 2");
+        BBoard boardNh3 = new BBoard("rnbqkbnr/ppp1pppp/3p4/8/8/7N/PPPPPPPP/RNBQKB1R w KQkq - 0 2");
+
+        int evaluateNf3 = Evaluation.evaluate(boardNf3);
+        int evaluateNh3 = Evaluation.evaluate(boardNh3);
+        assertTrue(evaluateNf3 > evaluateNh3, "Compared statement: " + evaluateNf3 + " > " + evaluateNh3);
+    }
 }
