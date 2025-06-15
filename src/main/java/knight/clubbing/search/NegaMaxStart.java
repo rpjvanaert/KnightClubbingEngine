@@ -43,8 +43,7 @@ public class NegaMaxStart {
 
         waitForFutures(futures, collector);
 
-        BMove bestMove = collector.getBestMove();
-        return bestMove != null ? bestMove : moves[0];
+        return collector.getBestMove();
     }
 
     private void waitForFutures(List<Future<?>> futures, ResultCollector collector) {

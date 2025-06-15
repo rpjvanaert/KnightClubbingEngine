@@ -3,6 +3,8 @@ package knight.clubbing;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.search.NegaMaxStart;
+import knight.clubbing.search.singleThreaded.Search;
+import knight.clubbing.search.singleThreaded.SearchConfig;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -18,6 +20,8 @@ import static knight.clubbing.search.EngineConst.MAX_THREADED_MOVES;
 
 public class UCI {
 
+    public static final String IN = "in: ";
+    public static final String OUT = "out: ";
     public static final String COMMAND_LOG = "command.log";
     public static final String BOARD_LOG = "board.log";
     private final Logger logger = Logger.getLogger(getClass().getName());
@@ -43,17 +47,17 @@ public class UCI {
     }
 
     protected void handleCommand(String line) {
-        logText(line, COMMAND_LOG);
+        logText(IN + line, COMMAND_LOG);
 
         switch (line) {
             case "uci": {
-                System.out.println("id name KnightClubbing");
-                System.out.println("id author Ralf van Aert");
-                System.out.println("uciok");
+                sendCommand("id name KnightClubbing");
+                sendCommand("id author Ralf van Aert");
+                sendCommand("uciok");
                 break;
             }
             case "isready": {
-                System.out.println("readyok");
+                sendCommand("readyok");
                 break;
             }
             case "stop": {
@@ -76,6 +80,11 @@ public class UCI {
                 break;
             }
         }
+    }
+
+    private void sendCommand(String line) {
+        System.out.println(line);
+        logText(OUT + line, COMMAND_LOG);
     }
 
     private void logText(String text, String location) {
@@ -103,7 +112,7 @@ public class UCI {
             for (int i = index + 1; i < parts.length; i++) {
                 try {
                     BMove move = BMove.fromUci(parts[i], board);
-                    board.makeMove(move, true);
+                    board.makeMove(move, false);
                 } catch (Exception e) {
                     logger.warning("Invalid move in position command: " + parts[i]);
                     logger.warning(e.getMessage());
@@ -133,15 +142,14 @@ public class UCI {
                 }
             }
         }
-        searchStart = new NegaMaxStart(depth, executor);
-
+        //searchStart = new NegaMaxStart(depth, executor);\
+        Search search = new Search(new SearchConfig(5));
 
         searchThread = new Thread(() -> {
             BMove move = null;
             try {
-                move = searchStart.findBestMove(board);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                //move = searchStart.findBestMove(board);
+                move = search.search(board).move;
             } catch (Throwable t) {
                 t.printStackTrace();
                 try (PrintWriter log = new PrintWriter(new FileWriter("engine_crash.log", true))) {
@@ -155,9 +163,9 @@ public class UCI {
                 } catch (IOException _) {}
             } finally {
                 if (move != null) {
-                    System.out.println("bestmove " + move.getUci());
+                    sendCommand("bestmove " + move.getUci());
                 } else {
-                    System.out.println("bestmove 0000"); // signal to lichess-bot that move is invalid
+                    sendCommand("bestmove 0000");
                 }
             }
         });

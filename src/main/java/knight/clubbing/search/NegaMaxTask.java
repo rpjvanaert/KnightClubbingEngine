@@ -51,7 +51,8 @@ public class NegaMaxTask implements Runnable {
             if (board.isInCheck()) {
                 return negamax(board, 1, alpha, beta);
             } else {
-                return quiesce(board, alpha, beta);
+                return Evaluation.evaluate(board);
+                //return quiesce(board, alpha, beta);
             }
         }
 

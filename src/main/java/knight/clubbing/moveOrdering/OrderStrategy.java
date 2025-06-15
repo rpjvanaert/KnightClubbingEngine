@@ -6,6 +6,5 @@ public enum OrderStrategy {
     //LATEGAME,
     GENERAL,
     MVV_LVA,
-    KILLER_MOVE,
-    STATIC_EVALUATION
+    QUIESCENT
 }

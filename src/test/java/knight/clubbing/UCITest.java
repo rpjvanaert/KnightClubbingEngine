@@ -18,4 +18,14 @@ class UCITest {
         assertEquals("r1b1r1k1/p3bppp/5n2/1N6/8/P6P/1PPPPPP1/R1BQKB1R w KQ - 3 17", uci.getBoard().exportFen());
     }
 
+    @Tag("uci")
+    @Test
+    void testIssue_unkown() {
+        UCI uci = new UCI();
+        String positionCommand = "position startpos moves d2d4 b8c6 d4d5 c6b4 b1c3 g8f6 a2a3 b4c2 d1c2 f6g4 g1f3 c7c6 d5c6 d7c6 h2h3 g4f6 g2g4 d8a5 c1d2 a5c5 a1c1 f6d7 f1g2 h7h5 e1g1 h5g4 h3g4 c5c4 b2b3 c4g4 c3e4 d7b6 d2e3 b6d5 c2d3 c8f5 f3d4 f5e4 d3e4 g4e4 g2e4 e7e5 d4f3";
+
+        uci.handlePosition(positionCommand);
+
+        assertEquals("r3kb1r/pp3pp1/2p5/3np3/4B3/PP2BN2/4PP2/2R2RK1 b kq - 1 22", uci.getBoard().exportFen());
+    }
 }
