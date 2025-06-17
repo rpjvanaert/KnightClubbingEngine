@@ -39,7 +39,7 @@ public class GeneralComparator implements Comparator<BMove> {
 
         BBoard copy = board.copy();
         copy.makeMove(move, true);
-        if (board.isInCheck())
+        if (copy.isInCheck())
             score += 420;
 
         if (move.isCastle())

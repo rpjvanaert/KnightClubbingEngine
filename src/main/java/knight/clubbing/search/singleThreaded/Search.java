@@ -43,7 +43,6 @@ public class Search {
     private int negamax(BBoard board, SearchConfig config, int depth, int alpha, int beta) {
         if (depth >= config.maxDepth()) {
             return quiesce(board, config, depth, alpha, beta);
-            //return Evaluation.evaluate(board);
         }
 
         BMove[] moves = new MoveGenerator(board).generateMoves(false);
@@ -60,8 +59,6 @@ public class Search {
 
         for (BMove move : moves) {
 
-            //BBoard newBoard = board.copy();
-            //newBoard.makeMove(move, true);
             board.makeMove(move, true);
             int score = -negamax(board, config, depth + 1, -beta, -alpha);
             board.undoMove(move, true);
