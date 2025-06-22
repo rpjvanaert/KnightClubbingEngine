@@ -4,7 +4,7 @@ import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 
 import java.util.Arrays;
-import java.util.Objects;
+import java.util.function.Predicate;
 
 public class MoveOrdering {
 
@@ -20,11 +20,24 @@ public class MoveOrdering {
                 Arrays.sort(moves, new MvvLvaComparator(board));
                 yield moves;
             }
-            case QUIESCENT -> Arrays.stream(moves)
-                    .filter(Objects::nonNull)
-                    .filter(new QuiescentPredicate(board))
-                    .sorted(new GeneralComparator(board))
-                    .toArray(BMove[]::new);
+            case QUIESCENT -> {
+                BMove[] filtered = filter(moves, new QuiescentPredicate(board));
+
+                Arrays.sort(filtered, new GeneralComparator(board));
+                yield filtered;
+            }
+
         };
+    }
+
+    private static BMove[] filter(BMove[] moves, Predicate<BMove> predicate) {
+        BMove[] temp = new BMove[moves.length];
+        int count = 0;
+        for (BMove move : moves) {
+            if (predicate.test(move))
+                temp[count++] = move;
+        }
+
+        return Arrays.copyOf(temp, count);
     }
 }

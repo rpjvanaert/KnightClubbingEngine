@@ -15,17 +15,25 @@ public class QuiescentPredicate implements Predicate<BMove> {
 
     @Override
     public boolean test(BMove move) {
-        if (board.getPieceBoards()[move.targetSquare()] != 0)
+        if (isCapture(move))
             return true;
 
-        /*
-        board.makeMove(move, true);
-        if (board.isInCheck())
-            return true;
-        board.undoMove(move, true);
+        //if (isCheck(move))
+            //return true;
 
-         */
+        if (move.isPromotion())
+            return true;
 
         return false;
+    }
+
+    private boolean isCapture(BMove move) {
+        return board.getPieceBoards()[move.targetSquare()] != 0;
+    }
+
+    private boolean isCheck(BMove move) {
+        BBoard copy = board.copy();
+        copy.makeMove(move, true);
+        return copy.isInCheck();
     }
 }

@@ -30,7 +30,7 @@ public class GeneralComparator implements Comparator<BMove> {
             score += 900 + getValuePiece(move.promotionPieceType());
 
         if (board.isInCheck())
-            score -= 100;
+            score += 100;
 
         int targetSquare = move.targetSquare();
 
