@@ -3,7 +3,7 @@ package knight.clubbing.search.singleThreaded;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.evaluation.Evaluation;
-import knight.clubbing.moveGeneration.MoveGenerator;
+import knight.clubbing.movegen.MoveGenerator;
 import knight.clubbing.moveOrdering.MoveOrdering;
 import knight.clubbing.moveOrdering.OrderStrategy;
 
