@@ -67,8 +67,27 @@ class StockfishTest {
             String bestMove = stockfish.bestMove( 5);
             assertNotNull(bestMove, "Best move should not be null");
             assertFalse(bestMove.isEmpty(), "Best move should not be empty");
+            assertEquals("e2e4", bestMove, "Best move should be e2e4 for the starting position");
         } catch (IOException e) {
             fail("Failed to get best move: " + e.getMessage());
+        } finally {
+            try {
+                stockfish.quit();
+            } catch (Exception e) {
+                fail("Failed to quit Stockfish: " + e.getMessage());
+            }
+        }
+    }
+
+    @Test
+    void testTopMoves() {
+        Stockfish stockfish = new Stockfish();
+        assertTrue(stockfish.start(), "Stockfish should start successfully");
+
+        try {
+            stockfish.topMoves("position startpos",1L, 10);
+        } catch (IOException e) {
+            fail("Failed to get top moves: " + e.getMessage());
         } finally {
             try {
                 stockfish.quit();

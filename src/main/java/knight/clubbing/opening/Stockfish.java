@@ -1,11 +1,17 @@
 package knight.clubbing.opening;
 
+import knight.clubbing.core.BBoard;
+import knight.clubbing.search.EngineConst;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -68,6 +74,10 @@ public class Stockfish implements AutoCloseable {
     private String bestMoveCommand(String positionCommand, int depth) throws IOException {
         sendCommand(positionCommand, _ -> true);
         String response = sendCommand("go depth " + depth, line -> line.startsWith("bestmove"));
+        return getBestMove(response);
+    }
+
+    private static String getBestMove(String response) {
         for (String line : response.split("\n")) {
             if (line.startsWith("bestmove")) {
                 String[] parts = line.split(" ");
@@ -75,6 +85,80 @@ public class Stockfish implements AutoCloseable {
             }
         }
         return null;
+    }
+
+    public List<OpeningBookEntry> topMoves(String positionCommand, long zobrist, int depth) throws IOException {
+        sendCommand(positionCommand, _ -> true);
+        String response = sendCommand("go depth " + depth, line -> line.startsWith("bestmove"));
+
+        String[] responseLines = response.split("\n");
+        Optional<String> infoLine = Arrays.stream(responseLines).filter(line -> line.startsWith("info depth " + depth)).findFirst();
+        Optional<String> bestMoveLine = Arrays.stream(responseLines).filter(line -> line.startsWith("bestmove")).findFirst();
+
+        if (infoLine.isEmpty() || bestMoveLine.isEmpty())
+            throw new IOException("Failed to retrieve top moves from Stockfish");
+
+        String[] infoParts = infoLine.get().split(" ");
+
+        int indexScore = getIndexArray(infoParts, "score");
+        int indexPv = getIndexArray(infoParts, "pv");
+        if (indexScore == -1 || indexPv == -1)
+            throw new IOException("Failed to parse Stockfish response");
+
+        String bestMove = getBestMove(response);
+
+        String typeScore = infoParts[indexScore + 1];
+        String scoreValue = infoParts[indexScore + 2];
+
+        String[] pvMoves = Arrays.copyOfRange(infoParts, indexPv + 1, infoParts.length);
+        pvMoves = Arrays.stream(pvMoves)
+                .filter(move -> !move.isEmpty())
+                .filter(move -> !move.equals(bestMove))
+                .toArray(String[]::new);
+
+        List<OpeningBookEntry> topMoves = new ArrayList<>();
+
+        int score = Integer.parseInt(scoreValue);
+        if (typeScore.equals("mate")) {
+            score = EngineConst.MATE_SCORE - score;
+        }
+
+        topMoves.add(new OpeningBookEntry(zobrist, bestMove, score, depth));
+
+
+        for (String pvMove : pvMoves) {
+            String[] evalParts = getEval(positionCommand + " moves " + bestMove, depth - 1).split(" ");
+            int eval = Integer.parseInt(evalParts[1]) * -1;
+            if (evalParts[0].equals("mate")) {
+                eval = EngineConst.MATE_SCORE - eval;
+            }
+
+            topMoves.add(new OpeningBookEntry(zobrist, pvMove, eval, depth));
+        }
+
+        return topMoves;
+    }
+
+    public String getEval(String positionCommand, int depth) throws IOException {
+        sendCommand(positionCommand, _ -> true);
+        String response = sendCommand("go depth " + depth, line -> line.startsWith("bestmove"));
+
+        String[] responseLines = response.split("\n");
+        Optional<String> infoLine = Arrays.stream(responseLines).filter(line -> line.startsWith("info depth " + depth)).findFirst();
+
+        if (infoLine.isEmpty())
+            throw new IOException("Failed to retrieve evaluation from Stockfish");
+
+        String[] infoParts = infoLine.get().split(" ");
+
+        int indexScore = getIndexArray(infoParts, "score");
+        if (indexScore == -1)
+            throw new IOException("Failed to parse Stockfish response for score");
+
+        String typeScore = infoParts[indexScore + 1];
+        String scoreValue = infoParts[indexScore + 2];
+
+        return typeScore + " " + scoreValue;
     }
 
     protected String sendCommand(String command, Predicate<String> isEnd) throws IOException {
@@ -100,6 +184,15 @@ public class Stockfish implements AutoCloseable {
             return true;
 
         return false;
+    }
+
+    protected static int getIndexArray(String[] array, String value) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i].equals(value)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     @Override

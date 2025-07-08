@@ -16,7 +16,7 @@ public class PgnParser {
     public static final String BLACK_ELO = "BlackElo";
     public static final String TERMINATION = "Termination";
 
-    public static final int ELO_THRESHOLD = 2000;
+    public static final int ELO_THRESHOLD = 2400;
     public static final String CLASSICAL = "Classical";
     public static final String ABANDONED = "Abandoned";
 
@@ -107,7 +107,7 @@ public class PgnParser {
         return moves;
     }
 
-    private static BMove determineMoveFromSan(String san, BMove[] possibleMoves, BBoard board) {
+    public static BMove determineMoveFromSan(String san, BMove[] possibleMoves, BBoard board) {
         for (BMove possibleMove : possibleMoves) {
             String moveSan = determineSan(board.copy(), possibleMove, possibleMoves);
             if (moveSan.equals(san)) {

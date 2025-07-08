@@ -6,19 +6,31 @@ import knight.clubbing.evaluation.Evaluation;
 import knight.clubbing.movegen.MoveGenerator;
 import knight.clubbing.moveOrdering.MoveOrdering;
 import knight.clubbing.moveOrdering.OrderStrategy;
+import knight.clubbing.opening.OpeningBookEntry;
+import knight.clubbing.opening.OpeningService;
+import knight.clubbing.opening.PgnParser;
 
 import static knight.clubbing.search.singleThreaded.SearchConstants.INF;
 import static knight.clubbing.search.singleThreaded.SearchConstants.MATE;
 
 public class Search {
     private final SearchConfig config;
+    private final OpeningService openingService;
 
     public Search(SearchConfig config) {
         this.config = config;
+        this.openingService = new OpeningService(OpeningService.jdbcUrl);
     }
 
     public SearchResult search(BBoard board) {
+
         BMove[] moves = new MoveGenerator(board).generateMoves(false);
+
+        if (openingService.exists(board.state.getZobristKey())) {
+            OpeningBookEntry entry = openingService.getBest(board.state.getZobristKey());
+            System.out.println(entry);
+            return new SearchResult(PgnParser.determineMoveFromSan(entry.getMove(), moves, board), entry.getScore());
+        }
 
         MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
 

@@ -7,15 +7,40 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class OpeningBookMaker {
 
+    private static long total = 0;
+    private static AtomicLong count = new AtomicLong(0);
+
     public static void main(String[] args) {
         OpeningService openingService = new OpeningService(OpeningService.jdbcUrl);
+        //openingService.deleteAll();
         System.out.println(openingService.getAll());
 
-        streamPerPgn().spliterator().forEachRemaining(pgn -> processPgn(pgn, openingService));
+        try {
+            Stockfish stockfish = new Stockfish();
+            stockfish.start();
+            insertOpeningBookEntries(openingService, stockfish, new BBoard());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        try {
+            Iterable<String> pgns = streamPerPgn();
+            total = StreamSupport.stream(pgns.spliterator(), false).count();
+            streamPerPgn().forEach(pgn -> executorService.submit(() -> processPgn(pgn, openingService)));
+        } finally {
+            executorService.shutdown();
+        }
+        //streamPerPgn().iterator().forEachRemaining(pgn -> processPgn(pgn, openingService));
     }
 
     private static Iterable<String> streamPerPgn() {
@@ -33,8 +58,8 @@ public class OpeningBookMaker {
     }
 
     private static void processPgn(String pgn, OpeningService openingService) {
-        if (!PgnParser.isWorthy(pgn))
-            return;
+        //if (!PgnParser.isWorthy(pgn))
+        //    return;
 
         //System.out.println(pgn);
 
@@ -43,13 +68,18 @@ public class OpeningBookMaker {
 
             createOpeningBookEntries(pgnInfo, openingService);
 
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
 
-
-
+        //System.out.println("Done one");
+        long currentCount = count.incrementAndGet();
+        System.out.println("Processed: " + currentCount + " of " + total);
         //System.out.println(pgnInfo);
 
         //BBoard board = new BBoard();
@@ -57,17 +87,24 @@ public class OpeningBookMaker {
 
     }
 
-    private static void createOpeningBookEntries(PgnInfo pgnInfo, OpeningService openingService) {
+    private static void createOpeningBookEntries(PgnInfo pgnInfo, OpeningService openingService) throws IOException {
         BBoard board = new BBoard();
-        int depth = 0;
-
+        Stockfish stockfish = new Stockfish();
+        stockfish.start();
         for (BMove move : pgnInfo.moves()) {
 
             board.makeMove(move, false);
 
-            int score = 0;
-            OpeningBookEntry entry = new OpeningBookEntry(board.state.getZobristKey(), move.getUci(), score, ++depth);
+            if (openingService.exists(board.state.getZobristKey()))
+                continue;
+
+            insertOpeningBookEntries(openingService, stockfish, board);
         }
 
+    }
+
+    private static void insertOpeningBookEntries(OpeningService openingService, Stockfish stockfish, BBoard board) throws IOException {
+        List<OpeningBookEntry> moves = stockfish.topMoves("position fen " + board.exportFen(), board.state.getZobristKey(), 15);
+        moves.forEach(openingService::insert);
     }
 }

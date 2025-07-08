@@ -3,13 +3,53 @@ package knight.clubbing.opening;
 import java.io.*;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class PgnStreamer implements Iterable<String> {
 
     private final BufferedReader reader;
+    private final BlockingQueue<String> queue = new LinkedBlockingQueue<>();
+    private volatile boolean finished = false;
 
     public PgnStreamer(InputStream inputStream) {
         this.reader = new BufferedReader(new InputStreamReader(inputStream));
+        startProducerThread();
+    }
+
+    private void startProducerThread() {
+        new Thread(() -> {
+            try {
+                StringBuilder game = new StringBuilder();
+                String line;
+                boolean collecting = false;
+                while ((line = reader.readLine()) != null) {
+                    if (line.startsWith("[Event ")) {
+                        if (collecting) {
+                            String potentialPgn = game.toString().trim();
+                            if (PgnParser.isWorthy(potentialPgn)) {
+                                queue.put(potentialPgn);
+                            }
+                            game.setLength(0);
+                        }
+                        collecting = true;
+                    }
+                    if (collecting) {
+                        game.append(line).append("\n");
+                    }
+                }
+                if (game.length() > 0) {
+                    String potentialPgn = game.toString().trim();
+                    if (PgnParser.isWorthy(potentialPgn)) {
+                        queue.put(potentialPgn);
+                    }
+                }
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            } finally {
+                finished = true;
+            }
+        }).start();
     }
 
     @Override
@@ -21,28 +61,13 @@ public class PgnStreamer implements Iterable<String> {
             public boolean hasNext() {
                 if (nextPgn != null) return true;
                 try {
-                    StringBuilder game = new StringBuilder();
-                    String line;
-                    boolean collecting = false;
-                    while ((line = reader.readLine()) != null) {
-                        if (line.startsWith("[Event ")) {
-                            if (collecting) {
-                                nextPgn = game.toString().trim();
-                                game.setLength(0);
-                                game.append(line).append("\n");
-                                return true;
-                            }
-                            collecting = true;
-                        }
-                        if (collecting) {
-                            game.append(line).append("\n");
-                        }
+                    while (!finished || !queue.isEmpty()) {
+                        nextPgn = queue.poll();
+                        if (nextPgn != null) return true;
                     }
-                    if (game.length() == 0) return false;
-                    nextPgn = game.toString().trim();
-                    return true;
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
+                    return false;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
             }
 
