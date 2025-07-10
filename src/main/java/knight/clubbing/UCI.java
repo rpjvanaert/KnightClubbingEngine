@@ -143,7 +143,7 @@ public class UCI {
             }
         }
         //searchStart = new NegaMaxStart(depth, executor);\
-        Search search = new Search(new SearchConfig(5));
+        Search search = new Search(new SearchConfig(depth));
 
         searchThread = new Thread(() -> {
             BMove move = null;

@@ -19,4 +19,13 @@ class SearchTest {
         SearchResult result = search.search(board);
         System.out.println(result);
     }
+
+    @Test @Tag("strength")
+    public void testBasic1() {
+        BBoard board = new BBoard("r1bqkb1r/pppp1ppp/8/4P2n/3Q4/8/PPP2PPP/RNB1KB1R w KQkq - 1 7");
+        SearchConfig config = new SearchConfig(5);
+        Search search = new Search(config);
+        SearchResult result = search.search(board);
+        System.out.println(result);
+    }
 }

@@ -1,6 +1,5 @@
 package knight.clubbing.opening;
 
-import knight.clubbing.core.BBoard;
 import knight.clubbing.search.EngineConst;
 
 import java.io.BufferedReader;
@@ -101,20 +100,13 @@ public class Stockfish implements AutoCloseable {
         String[] infoParts = infoLine.get().split(" ");
 
         int indexScore = getIndexArray(infoParts, "score");
-        int indexPv = getIndexArray(infoParts, "pv");
-        if (indexScore == -1 || indexPv == -1)
+        if (indexScore == -1)
             throw new IOException("Failed to parse Stockfish response");
 
         String bestMove = getBestMove(response);
 
         String typeScore = infoParts[indexScore + 1];
         String scoreValue = infoParts[indexScore + 2];
-
-        String[] pvMoves = Arrays.copyOfRange(infoParts, indexPv + 1, infoParts.length);
-        pvMoves = Arrays.stream(pvMoves)
-                .filter(move -> !move.isEmpty())
-                .filter(move -> !move.equals(bestMove))
-                .toArray(String[]::new);
 
         List<OpeningBookEntry> topMoves = new ArrayList<>();
 
@@ -124,17 +116,6 @@ public class Stockfish implements AutoCloseable {
         }
 
         topMoves.add(new OpeningBookEntry(zobrist, bestMove, score, depth));
-
-
-        for (String pvMove : pvMoves) {
-            String[] evalParts = getEval(positionCommand + " moves " + bestMove, depth - 1).split(" ");
-            int eval = Integer.parseInt(evalParts[1]) * -1;
-            if (evalParts[0].equals("mate")) {
-                eval = EngineConst.MATE_SCORE - eval;
-            }
-
-            topMoves.add(new OpeningBookEntry(zobrist, pvMove, eval, depth));
-        }
 
         return topMoves;
     }
