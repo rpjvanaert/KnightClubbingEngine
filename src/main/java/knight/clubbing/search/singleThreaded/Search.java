@@ -18,7 +18,7 @@ public class Search {
 
     public Search(SearchConfig config) {
         this.config = config;
-        this.openingService = new OpeningService(OpeningService.jdbcUrl);
+        this.openingService = new OpeningService();
     }
 
     public SearchResult search(BBoard board) {
