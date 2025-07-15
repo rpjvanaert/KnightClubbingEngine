@@ -101,6 +101,46 @@ class PgnParserTest {
         assertEquals(expected, result);
     }
 
+    /*
+        ---     Flags for BMove:    ---
+        noFlag = 0
+        enPassantCaptureFlag = 1
+        castleFlag = 2
+        pawnTwoUpFlag = 3
+        promoteToQueenFlag = 4
+        promoteToKnightFlag = 5
+        promoteToRookFlag = 6
+        promoteToBishopFlag = 7
+     */
+    @ParameterizedTest(name = "determineSan for {1}{2} (flag {3}) should be {4}")
+    @CsvSource({
+            "r2q1rk1/ppp1bppp/2n2n2/3p2B1/3P2b1/2N1PN2/PP2BPPP/R2Q1RK1 b - - 3 9, h6, h7, h6, 0",
+            "r4rk1/p1pqbppp/2pp1n2/4p1B1/4P1b1/2NP1N2/PPPQ1PPP/R4RK1 w - - 5 10, Ne1, f3, e1, 0",
+            "r2q1rk1/ppp1bppp/2n2n2/3p2B1/3P2b1/2N1PN2/PP2BPPP/R2Q1RK1 b - - 3 9, Bxf3, g4, f3, 0",
+            "r4rk1/p1pqbppp/2pp1n2/4p1B1/4P1b1/2NP1N2/PPPQ1PPP/R4RK1 w - - 5 10, Nxe5, f3, e5, 0",
+            "rnbqkbnr/ppp1pppp/8/8/2pP4/8/PP2PPPP/RNBQKBNR w KQkq - 0 3, Qa4+, d1, a4, 0",
+            "rnbqkbnr/pp2pppp/8/2Pp4/8/5N2/PPP1PPPP/RNBQKB1R b KQkq - 1 4, Qa5+, d8, a5, 0",
+            "rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQK2R w KQkq - 4 4, O-O, e1, g1, 2",
+            "r3kbnr/ppp1qppp/2npb3/4p3/4P3/2NP1N2/PPP1BPPP/R1BQ1RK1 b kq - 0 6, O-O-O, e8, c8, 2",
+            "6k1/R7/1R6/8/8/3K4/8/8 w - - 0 1, Rb8#, b6, b8, 0",
+            "rnbqkbnr/ppp1ppp1/7p/2Pp4/8/8/PP1PPPPP/RNBQKBNR w KQkq d6 0 3, cxd6, c5, d6, 1",
+            "8/1P4k1/8/8/8/8/8/6K1 w - - 0 1, b8=Q, b7, b8, 4",
+            "8/1P4k1/8/8/8/8/8/6K1 w - - 0 1, b8=R, b7, b8, 6",
+            "8/1P4k1/8/8/8/8/8/6K1 w - - 0 1, b8=B, b7, b8, 7",
+            "8/1P4k1/8/8/8/8/8/6K1 w - - 0 1, b8=N, b7, b8, 5",
+            "6k1/1P6/8/8/8/8/8/6K1 w - - 0 1, b8=Q+, b7, b8, 4"
+    })
+    void determineSan(String fen, String expectedSan, String from, String to, int flag) {
+        BBoard board = new BBoard(fen);
+        MoveGenerator moveGenerator = new MoveGenerator(board);
+        BMove move = new BMove(BBoardHelper.stringCoordToIndex(from), BBoardHelper.stringCoordToIndex(to), flag);
+        BMove[] possibleMoves = moveGenerator.generateMoves(false);
+
+        String result = PgnParser.determineSan(board, move, possibleMoves);
+
+        assertEquals(expectedSan, result);
+    }
+
     //@Test
     void test() {
         String pgn = 
