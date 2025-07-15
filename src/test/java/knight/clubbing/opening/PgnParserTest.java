@@ -41,6 +41,36 @@ class PgnParserTest {
         promoteToRookFlag = 6
         promoteToBishopFlag = 7
      */
+    @ParameterizedTest(name = "getDisambiguation for {1}{2}(flag {3} should be {4})")
+    @CsvSource({
+            "rnbqkb1r/ppp1pppp/5n2/3p4/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 0 1, f3, d2, 0, f",
+            "rnbqkb1r/ppp1pppp/5n2/3p4/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 0 1, b1, d2, 0, b",
+            "r2qkb1r/1pp1npp1/p4n1p/P2Pp3/2B3b1/1QPP1N2/1P1N1PPP/R1B1K2R b KQkq - 0 10, f6, d5, 0, f",
+            "k7/8/8/2N3N1/8/6N1/8/K7 w - - 0 1, g5, e4, 0, g5",
+            "r2qkbnr/pp3ppp/2n1p3/3pP3/2pP4/2P1BN2/PP3PPP/RN1QK2R b KQkq - 1 9, g8, e7, 0, g"
+    })
+    void getDisambiguation(String fen, String from, String to, int flag, String expected) {
+        BBoard board = new BBoard(fen);
+        MoveGenerator moveGenerator = new MoveGenerator(board);
+        BMove move = new BMove(BBoardHelper.stringCoordToIndex(from), BBoardHelper.stringCoordToIndex(to), flag);
+        BMove[] possibleMoves = moveGenerator.generateMoves(false);
+
+        String result = PgnParser.getDisambiguation(board, move, possibleMoves);
+
+        assertEquals(expected, result);
+    }
+
+    /*
+        ---     Flags for BMove:    ---
+        noFlag = 0
+        enPassantCaptureFlag = 1
+        castleFlag = 2
+        pawnTwoUpFlag = 3
+        promoteToQueenFlag = 4
+        promoteToKnightFlag = 5
+        promoteToRookFlag = 6
+        promoteToBishopFlag = 7
+     */
     @ParameterizedTest(name = "determineMoveFromSan for {1} - BMove:{2}{3} (flag {4})")
     @CsvSource({
             "r2q1rk1/ppp1bppp/2n2n2/3p2B1/3P2b1/2N1PN2/PP2BPPP/R2Q1RK1 b - - 3 9, h6, h7, h6, 0",
