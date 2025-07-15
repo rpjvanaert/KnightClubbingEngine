@@ -85,7 +85,7 @@ class StockfishTest {
         assertTrue(stockfish.start(), "Stockfish should start successfully");
 
         try {
-            stockfish.topMoves("position startpos",1L, 10);
+            stockfish.topMove("position startpos",1L, 10);
         } catch (IOException e) {
             fail("Failed to get top moves: " + e.getMessage());
         } finally {

@@ -8,9 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -86,7 +84,7 @@ public class Stockfish implements AutoCloseable {
         return null;
     }
 
-    public List<OpeningBookEntry> topMoves(String positionCommand, long zobrist, int depth) throws IOException {
+    public OpeningBookEntry topMove(String positionCommand, long zobrist, int depth) throws IOException {
         sendCommand(positionCommand, _ -> true);
         String response = sendCommand("go depth " + depth, line -> line.startsWith("bestmove"));
 
@@ -108,16 +106,12 @@ public class Stockfish implements AutoCloseable {
         String typeScore = infoParts[indexScore + 1];
         String scoreValue = infoParts[indexScore + 2];
 
-        List<OpeningBookEntry> topMoves = new ArrayList<>();
-
         int score = Integer.parseInt(scoreValue);
         if (typeScore.equals("mate")) {
             score = EngineConst.MATE_SCORE - score;
         }
 
-        topMoves.add(new OpeningBookEntry(zobrist, bestMove, score, depth));
-
-        return topMoves;
+        return new OpeningBookEntry(zobrist, bestMove, score, depth);
     }
 
     public String getEval(String positionCommand, int depth) throws IOException {
