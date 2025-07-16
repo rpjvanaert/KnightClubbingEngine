@@ -2,12 +2,12 @@ package knight.clubbing.evaluation;
 
 import knight.clubbing.core.BBoardHelper;
 import knight.clubbing.core.BCoord;
-import knight.clubbing.moveGeneration.MoveUtility;
+import knight.clubbing.movegen.MoveUtility;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static knight.clubbing.moveGeneration.MoveUtility.FileA;
+import static knight.clubbing.movegen.MoveUtility.FileA;
 
 public class PrecomputedEvaluationData {
 

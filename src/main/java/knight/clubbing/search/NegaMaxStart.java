@@ -2,7 +2,7 @@ package knight.clubbing.search;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
-import knight.clubbing.moveGeneration.MoveGenerator;
+import knight.clubbing.movegen.MoveGenerator;
 import knight.clubbing.moveOrdering.MoveOrdering;
 import knight.clubbing.moveOrdering.OrderStrategy;
 
