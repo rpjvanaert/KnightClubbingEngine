@@ -9,9 +9,6 @@ import knight.clubbing.movegen.MoveGenerator;
 import knight.clubbing.opening.OpeningBookEntry;
 import knight.clubbing.opening.OpeningService;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import static knight.clubbing.search.singleThreaded.SearchConstants.INF;
 import static knight.clubbing.search.singleThreaded.SearchConstants.MATE;
 
@@ -23,7 +20,7 @@ public class IterativeDeepening {
     private SearchResult bestResult;
     private long startTime;
 
-    private Map<Long, Transposition> transpositionTable;
+    private final TranspositionTable transpositionTable;
 
     private final OpeningService openingService;
 
@@ -32,7 +29,7 @@ public class IterativeDeepening {
         this.timeLimit = 0;
         this.stopSearch = false;
         this.bestResult = new SearchResult();
-        this.transpositionTable = new ConcurrentHashMap<>();
+        this.transpositionTable = new TranspositionTable();
         this.openingService = new OpeningService();
     }
 
@@ -106,13 +103,10 @@ public class IterativeDeepening {
         }
 
         long zobristKey = board.state.getZobristKey();
-        if (transpositionTable.containsKey(zobristKey)) {
-            Transposition transposition = transpositionTable.get(zobristKey);
-            if (transposition.depth() >= depth) {
-                return transposition.score();
-            }
+        TranspositionEntry entry = transpositionTable.get(zobristKey);
+        if (entry != null && entry.depth() >= depth) {
+            return entry.value();
         }
-
 
         if (depth <= 0 || stopSearch)
             return quiesce(board, alpha, beta);
@@ -142,7 +136,7 @@ public class IterativeDeepening {
                 break;
         }
 
-        transpositionTable.put(zobristKey, new Transposition(bestScore, depth));
+        transpositionTable.put(new TranspositionEntry(zobristKey, bestScore, null, (short) depth, (short) 0));
 
         return bestScore;
     }

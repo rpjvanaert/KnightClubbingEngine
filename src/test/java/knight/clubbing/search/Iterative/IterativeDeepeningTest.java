@@ -41,6 +41,7 @@ class IterativeDeepeningTest {
         IterativeDeepening searcher = new IterativeDeepening(board);
 
         SearchResult result = searcher.search(1000);
+        System.out.println("Move: " + result.getBestMove() + ", Evaluation: " + result.getEvaluation());
 
         assertNotNull(result, "Search result should not be null");
         assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");
