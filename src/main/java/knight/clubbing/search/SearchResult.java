@@ -1,4 +1,4 @@
-package knight.clubbing.search.Iterative;
+package knight.clubbing.search;
 
 public class SearchResult {
     private String bestMove;

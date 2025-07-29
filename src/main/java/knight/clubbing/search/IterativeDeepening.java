@@ -1,4 +1,4 @@
-package knight.clubbing.search.Iterative;
+package knight.clubbing.search;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
@@ -9,8 +9,8 @@ import knight.clubbing.movegen.MoveGenerator;
 import knight.clubbing.opening.OpeningBookEntry;
 import knight.clubbing.opening.OpeningService;
 
-import static knight.clubbing.search.singleThreaded.SearchConstants.INF;
-import static knight.clubbing.search.singleThreaded.SearchConstants.MATE;
+import static knight.clubbing.search.SearchConstants.INF;
+import static knight.clubbing.search.SearchConstants.MATE;
 
 public class IterativeDeepening {
 
@@ -66,6 +66,7 @@ public class IterativeDeepening {
     }
 
     private boolean cantUseTime() {
+
         return System.currentTimeMillis() - startTime >= timeLimit;
     }
 
@@ -83,7 +84,7 @@ public class IterativeDeepening {
 
             board.makeMove(move, true);
 
-            int score = -negamax(board, depth, -INF, INF);
+            int score = -negamax(board.copy(), depth, -INF, INF);
 
             board.undoMove(move, true);
 
@@ -105,7 +106,17 @@ public class IterativeDeepening {
         long zobristKey = board.state.getZobristKey();
         TranspositionEntry entry = transpositionTable.get(zobristKey);
         if (entry != null && entry.depth() >= depth) {
-            return entry.value();
+            if (entry.nodeType() == TranspositionEntry.EXACT) {
+                return entry.value();
+            } else if (entry.nodeType() == TranspositionEntry.LOWER_BOUND && entry.value() > alpha) {
+                alpha = entry.value();
+            } else if (entry.nodeType() == TranspositionEntry.UPPER_BOUND && entry.value() < beta) {
+                beta = entry.value();
+            }
+
+            if (alpha >= beta) {
+                return entry.value();
+            }
         }
 
         if (depth <= 0 || stopSearch)
@@ -136,7 +147,16 @@ public class IterativeDeepening {
                 break;
         }
 
-        transpositionTable.put(new TranspositionEntry(zobristKey, bestScore, null, (short) depth, (short) 0));
+        short flag;
+        if (bestScore <= alpha) {
+            flag = TranspositionEntry.UPPER_BOUND;
+        } else if (bestScore >= beta) {
+            flag = TranspositionEntry.LOWER_BOUND;
+        } else {
+            flag = TranspositionEntry.EXACT;
+        }
+
+        transpositionTable.put(new TranspositionEntry(zobristKey, bestScore, null, (short) depth, flag));
 
         return bestScore;
     }

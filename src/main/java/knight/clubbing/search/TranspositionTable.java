@@ -1,4 +1,4 @@
-package knight.clubbing.search.Iterative;
+package knight.clubbing.search;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

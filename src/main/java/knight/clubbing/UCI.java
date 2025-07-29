@@ -2,9 +2,6 @@ package knight.clubbing;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
-import knight.clubbing.search.NegaMaxStart;
-import knight.clubbing.search.singleThreaded.Search;
-import knight.clubbing.search.singleThreaded.SearchConfig;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -30,7 +27,7 @@ public class UCI {
 
     private BBoard board;
     private Thread searchThread;
-    private NegaMaxStart searchStart;
+    //private NegaMaxStart searchStart;
 
     protected BBoard getBoard() {
         return board;
@@ -61,12 +58,12 @@ public class UCI {
                 break;
             }
             case "stop": {
-                if (searchStart != null) searchStart.stop();
+                //if (searchStart != null) searchStart.stop();
                 if (searchThread != null) searchThread.interrupt();
                 break;
             }
             case "quit" : {
-                if (searchStart != null) searchStart.stop();
+                //if (searchStart != null) searchStart.stop();
                 if (searchThread != null) searchThread.interrupt();
                 System.exit(0);
                 break;
@@ -143,13 +140,13 @@ public class UCI {
             }
         }
         //searchStart = new NegaMaxStart(depth, executor);\
-        Search search = new Search(new SearchConfig(depth));
+        //Search search = new Search(new SearchConfig(depth));
 
         searchThread = new Thread(() -> {
             BMove move = null;
             try {
                 //move = searchStart.findBestMove(board);
-                move = search.search(board).move;
+                //move = search.search(board).move;
             } catch (Throwable t) {
                 t.printStackTrace();
                 try (PrintWriter log = new PrintWriter(new FileWriter("engine_crash.log", true))) {

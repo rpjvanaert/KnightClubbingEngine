@@ -1,4 +1,4 @@
-package knight.clubbing.search.singleThreaded;
+package knight.clubbing.search;
 
 public class SearchConstants {
 
