@@ -29,7 +29,7 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(60000);
+        SearchResult result = searcher.search(5000);
 
         assertNotNull(result, "Search result should not be null");
         assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");

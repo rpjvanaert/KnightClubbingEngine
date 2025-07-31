@@ -14,6 +14,8 @@ import static knight.clubbing.search.SearchConstants.MATE;
 
 public class IterativeDeepening {
 
+    private static final int ASPIRATION_WINDOW = 50;
+
     private BBoard board;
     private long timeLimit;
     private boolean stopSearch;
@@ -46,7 +48,7 @@ public class IterativeDeepening {
 
         for (int depth = 1; !stopSearch; depth++) {
 
-            SearchResult result = searchAtDepth(depth);
+            SearchResult result = searchAtDepth(depth, this.bestResult);
 
             if (stopSearch) break;
 
@@ -70,8 +72,12 @@ public class IterativeDeepening {
         return System.currentTimeMillis() - startTime >= timeLimit;
     }
 
-    private SearchResult searchAtDepth(int depth) {
+    private SearchResult searchAtDepth(int depth, SearchResult prevResult) {
+        System.out.println("Searching at depth: " + depth);
         SearchResult result = new SearchResult();
+
+        int alpha = prevResult == null ? -INF : prevResult.getEvaluation() - ASPIRATION_WINDOW;
+        int beta = prevResult == null ? INF : prevResult.getEvaluation() + ASPIRATION_WINDOW;
 
         BMove[] moves = new MoveGenerator(board).generateMoves(false);
         MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
@@ -84,7 +90,18 @@ public class IterativeDeepening {
 
             board.makeMove(move, true);
 
-            int score = -negamax(board.copy(), depth, -INF, INF);
+            int score;
+            do {
+                score = -negamax(board.copy(), depth, -beta, -alpha, 0);
+
+                if (score <= alpha) {
+                    alpha -= ASPIRATION_WINDOW;
+                } else if (score >= beta) {
+                    beta += ASPIRATION_WINDOW;
+                } else {
+                    break;
+                }
+            } while (true);
 
             board.undoMove(move, true);
 
@@ -97,7 +114,7 @@ public class IterativeDeepening {
         return result;
     }
 
-    private int negamax(BBoard board, int depth, int alpha, int beta) {
+    private int negamax(BBoard board, int depth, int alpha, int beta, int ply) {
         if (stopSearch || cantUseTime()) {
             stopSearch = true;
             return 0;
@@ -120,7 +137,7 @@ public class IterativeDeepening {
         }
 
         if (depth <= 0 || stopSearch)
-            return quiesce(board, alpha, beta);
+            return quiesce(board, alpha, beta, ply);
 
         int bestScore = -INF;
 
@@ -129,7 +146,7 @@ public class IterativeDeepening {
 
         if (moves.length == 0) {
             if (board.isInCheck())
-                return board.isWhiteToMove ? -MATE + depth : MATE - depth;
+                return board.isWhiteToMove ? -MATE + ply : MATE - ply;
             else
                 return 0;
         }
@@ -137,7 +154,7 @@ public class IterativeDeepening {
         for (BMove move : moves) {
             board.makeMove(move, true);
 
-            int score = -negamax(board, depth - 1, -beta, -alpha);
+            int score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
 
             board.undoMove(move, true);
 
@@ -161,7 +178,7 @@ public class IterativeDeepening {
         return bestScore;
     }
 
-    private int quiesce(BBoard board, int alpha, int beta) {
+    private int quiesce(BBoard board, int alpha, int beta, int ply) {
         if (stopSearch || cantUseTime()) {
             stopSearch = true;
             return 0;
@@ -175,13 +192,13 @@ public class IterativeDeepening {
             alpha = standPat;
         }
 
-        BMove[] moves = new MoveGenerator(board).generateMoves(true);
+        BMove[] moves = new MoveGenerator(board).generateMoves(false);
         moves = MoveOrdering.orderMoves(board, moves, OrderStrategy.QUIESCENT);
 
         for (BMove move : moves) {
             board.makeMove(move, true);
 
-            int score = -quiesce(board, -beta, -alpha);
+            int score = -quiesce(board, -beta, -alpha, ply + 1);
 
             board.undoMove(move, true);
 
