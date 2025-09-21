@@ -17,7 +17,7 @@ public class IterativeDeepening {
     private static final int ASPIRATION_WINDOW = 50;
 
     private BBoard board;
-    private long timeLimit;
+    private SearchConfig config;
     private boolean stopSearch;
     private SearchResult bestResult;
     private long startTime;
@@ -28,19 +28,21 @@ public class IterativeDeepening {
 
     public IterativeDeepening(BBoard board) {
         this.board = board;
-        this.timeLimit = 0;
+        this.config = null;
         this.stopSearch = false;
         this.bestResult = new SearchResult();
         this.transpositionTable = new TranspositionTable();
         this.openingService = new OpeningService();
     }
 
-    public SearchResult search(long timeLimit) {
+    public SearchResult search(SearchConfig config) {
         if (openingService.exists(board.state.getZobristKey())) {
             OpeningBookEntry entry = openingService.getBest(board.state.getZobristKey());
             return new SearchResult(entry.getMove(), entry.getScore());
         }
-        this.timeLimit = timeLimit;
+
+
+        this.config = config;
         this.stopSearch = false;
         this.bestResult = new SearchResult();
 
@@ -69,7 +71,7 @@ public class IterativeDeepening {
 
     private boolean cantUseTime() {
 
-        return System.currentTimeMillis() - startTime >= timeLimit;
+        return System.currentTimeMillis() - startTime >= config.timeLimit();
     }
 
     private SearchResult searchAtDepth(int depth, SearchResult prevResult) {

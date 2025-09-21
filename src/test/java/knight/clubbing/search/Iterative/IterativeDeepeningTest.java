@@ -2,6 +2,7 @@ package knight.clubbing.search.Iterative;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.search.IterativeDeepening;
+import knight.clubbing.search.SearchConfig;
 import knight.clubbing.search.SearchResult;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +16,7 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(1000);
+        SearchResult result = searcher.search(new SearchConfig(0, 1000, 1));
 
         assertNotNull(result, "Search result should not be null");
         assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");
@@ -29,7 +30,7 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(5000);
+        SearchResult result = searcher.search(new SearchConfig(0, 1000, 1));
 
         assertNotNull(result, "Search result should not be null");
         assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");
@@ -42,7 +43,7 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(5000);
+        SearchResult result = searcher.search(new SearchConfig(0, 1000, 1));
 
         assertNotNull(result, "Search result should not be null");
         assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");

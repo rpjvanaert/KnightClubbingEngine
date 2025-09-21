@@ -44,7 +44,7 @@ public class OpeningBookMaker {
 
     private static Iterable<String> streamPerPgn() {
         try {
-            InputStream input = new FileInputStream("C:\\Users\\ralf\\Documents\\Repositories\\GitHub\\KnightClubbing\\KnightClubbingEngine\\src\\main\\resources\\lichess_db_standard_rated_2016-12.pgn");
+            InputStream input = new FileInputStream("/home/ralf/Documents/repositories/github/KnightClubbing/KnightClubbingEngine/src/main/resources/lichess_db_standard_rated_2016-12.pgn");
             return new PgnStreamer(input);
 
         } catch (IOException e) {
