@@ -2,6 +2,9 @@ package knight.clubbing;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
+import knight.clubbing.search.IterativeDeepening;
+import knight.clubbing.search.SearchConfig;
+import knight.clubbing.search.SearchResult;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,7 +30,7 @@ public class UCI {
 
     private BBoard board;
     private Thread searchThread;
-    //private NegaMaxStart searchStart;
+    private IterativeDeepening iterativeDeepening;
 
     protected BBoard getBoard() {
         return board;
@@ -129,24 +132,41 @@ public class UCI {
 
     protected void handleGo(String line) {
         int depth = DEFAULT_DEPTH;
+        int wtime = -1, btime = -1, winc = 0, binc = 0;
+        boolean whiteToMove = board.isWhiteToMove;
 
-        if (line.contains("depth")) {
-            String[] parts = line.split(" ");
-            for (int i = 0; i < parts.length; i++) {
-                if (parts[i].equals("depth") && i + 1 < parts.length) {
-                    depth = Integer.parseInt(parts[i + 1]);
+        String[] parts = line.split(" ");
+        for (int i = 0; i < parts.length; i++) {
+            switch (parts[i]) {
+                case "wtime":
+                    if (i + 1 < parts.length) wtime = Integer.parseInt(parts[++i]);
                     break;
-                }
+                case "btime":
+                    if (i + 1 < parts.length) btime = Integer.parseInt(parts[++i]);
+                    break;
+                case "winc":
+                    if (i + 1 < parts.length) winc = Integer.parseInt(parts[++i]);
+                    break;
+                case "binc":
+                    if (i + 1 < parts.length) binc = Integer.parseInt(parts[++i]);
+                    break;
+                case "depth":
+                    if (i + 1 < parts.length) depth = Integer.parseInt(parts[++i]);
+                    break;
             }
         }
-        //searchStart = new NegaMaxStart(depth, executor);\
-        //Search search = new Search(new SearchConfig(depth));
+        iterativeDeepening = new IterativeDeepening(board);
+
+        int time = whiteToMove ? wtime : btime;
+        int inc = whiteToMove ? winc : binc;
 
         searchThread = new Thread(() -> {
             BMove move = null;
             try {
-                //move = searchStart.findBestMove(board);
-                //move = search.search(board).move;
+                int moveTime = Math.min(time / 30 + inc, time / 2);
+                moveTime = Math.max(10, Math.min(moveTime, time - 10));
+
+                SearchResult result = iterativeDeepening.search(new SearchConfig(10, moveTime, MAX_THREADED_MOVES));
             } catch (Throwable t) {
                 t.printStackTrace();
                 try (PrintWriter log = new PrintWriter(new FileWriter("engine_crash.log", true))) {

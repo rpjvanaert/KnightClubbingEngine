@@ -19,10 +19,11 @@ public class Stockfish implements AutoCloseable {
     private BufferedWriter writer;
 
     public boolean start() {
-        Path stockfishFolder = Paths.get("stockfish");
+        Path stockfishFolder = Paths.get("stockfish/stockfish");
 
         try (Stream<Path> folderStream = Files.list(stockfishFolder)){
             Optional<Path> executablePath = folderStream
+                    .filter(path -> !Files.isDirectory(path))
                     .filter(Files::isExecutable)
                     .findFirst();
 
