@@ -9,6 +9,12 @@ import knight.clubbing.movegen.MoveGenerator;
 import knight.clubbing.opening.OpeningBookEntry;
 import knight.clubbing.opening.OpeningService;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import static knight.clubbing.search.SearchConstants.INF;
 import static knight.clubbing.search.SearchConstants.MATE;
 
@@ -50,7 +56,7 @@ public class IterativeDeepening {
 
         for (int depth = 1; !stopSearch; depth++) {
 
-            SearchResult result = searchAtDepth(depth, this.bestResult);
+            SearchResult result = searchAtDepth(depth, this.bestResult, config);
 
             if (stopSearch) break;
 
@@ -74,7 +80,7 @@ public class IterativeDeepening {
         return System.currentTimeMillis() - startTime >= config.timeLimit();
     }
 
-    private SearchResult searchAtDepth(int depth, SearchResult prevResult) {
+    private SearchResult searchAtDepth(int depth, SearchResult prevResult, SearchConfig config) {
         System.out.println("Searching at depth: " + depth);
         SearchResult result = new SearchResult();
 
@@ -84,6 +90,94 @@ public class IterativeDeepening {
         BMove[] moves = new MoveGenerator(board).generateMoves(false);
         MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
 
+        if (config.threads() == 1)
+            return searchSingleThreaded(depth, moves, beta, alpha, result);
+
+        if (config.threads() > 1) {
+            return searchMultiThreaded(depth, config, moves, beta, alpha);
+        }
+
+        return result;
+    }
+
+    private SearchResult searchMultiThreaded(int depth, SearchConfig config, BMove[] moves, int beta, int alpha) {
+        ExecutorService executor = Executors.newFixedThreadPool(config.threads());
+        List<Future<SearchResult>> futures = new ArrayList<>();
+        SearchResult bestResult = new SearchResult();
+        bestResult.setEvaluation(-INF);
+
+        int movesPerThread = Math.max(1, moves.length / config.threads());
+        int remainingMoves = moves.length % config.threads();
+
+        int moveIndex = 0;
+        for (int threadId = 0; threadId < config.threads() && moveIndex < moves.length; threadId++) {
+            int currentThreadMoves = movesPerThread + (threadId < remainingMoves ? 1 : 0);
+
+            BMove[] threadMoves = new BMove[Math.min(currentThreadMoves, moves.length - moveIndex)];
+            System.arraycopy(moves, moveIndex, threadMoves, 0, threadMoves.length);
+            moveIndex += threadMoves.length;
+
+            Future<SearchResult> future = executor.submit(() -> {
+                SearchResult threadResult = new SearchResult();
+                threadResult.setEvaluation(-INF);
+
+                for (BMove move : threadMoves) {
+                    if (stopSearch || cantUseTime()) {
+                        stopSearch = true;
+                        break;
+                    }
+
+                    BBoard threadBoard = board.copy();
+                    threadBoard.makeMove(move, true);
+
+                    int score;
+                    int threadAlpha = alpha;
+                    int threadBeta = beta;
+
+                    do {
+                        score = -negamax(threadBoard.copy(), depth, -threadBeta, -threadAlpha, 0);
+
+                        if (score <= threadAlpha) {
+                            threadAlpha -= ASPIRATION_WINDOW;
+                        } else if (score >= threadBeta) {
+                            threadBeta += ASPIRATION_WINDOW;
+                        } else {
+                            break;
+                        }
+                    } while (true);
+
+                    threadBoard.undoMove(move, true);
+
+                    if (score > threadResult.getEvaluation()) {
+                        threadResult.setEvaluation(score);
+                        threadResult.setBestMove(move.toString());
+                    }
+                }
+
+                return threadResult;
+            });
+
+            futures.add(future);
+        }
+
+        // Collect results from all threads
+        try {
+            for (Future<SearchResult> future : futures) {
+                SearchResult threadResult = future.get();
+                if (threadResult.getEvaluation() > bestResult.getEvaluation()) {
+                    bestResult = threadResult;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error in multi-threaded search: " + e.getMessage());
+        } finally {
+            executor.shutdown();
+        }
+
+        return bestResult;
+    }
+
+    private SearchResult searchSingleThreaded(int depth, BMove[] moves, int beta, int alpha, SearchResult result) {
         for (BMove move : moves) {
             if (stopSearch || cantUseTime()) {
                 stopSearch = true;

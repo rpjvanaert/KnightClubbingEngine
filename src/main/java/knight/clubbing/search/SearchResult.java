@@ -29,4 +29,11 @@ public class SearchResult {
     public void setEvaluation(int evaluation) {
         this.evaluation = evaluation;
     }
+
+    @Override
+    public String toString() {
+        return "(" +
+                bestMove + ": " + evaluation +
+                ")";
+    }
 }
