@@ -6,9 +6,13 @@ import knight.clubbing.search.SearchConfig;
 import knight.clubbing.search.SearchResult;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class IterativeDeepeningTest {
+
+    public static final long TEN_SECONDS = Duration.ofSeconds(10L).toMillis();
 
     @Test
     void testSearch_Opening1() {
@@ -16,7 +20,7 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(new SearchConfig(0, 1000, 1));
+        SearchResult result = searcher.search(new SearchConfig(0, TEN_SECONDS, 1));
 
         assertNotNull(result, "Search result should not be null");
         assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");
@@ -30,10 +34,10 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(new SearchConfig(0, 3000, 1));
+        SearchResult result = searcher.search(new SearchConfig(0, IterativeDeepeningTest.TEN_SECONDS, 1));
 
         assertNotNull(result, "Search result should not be null");
-        assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");
+        assertNotEquals(0, result.getEvaluation(), "Evaluation for " + result.getBestMove() + " should not be zero");
         assertNotNull(result.getBestMove(), "Best move should not be null");
     }
 
@@ -43,11 +47,11 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(new SearchConfig(0, 10000, 1));
+        SearchResult result = searcher.search(new SearchConfig(0, TEN_SECONDS, 1));
 
         System.out.println(result);
         assertNotNull(result, "Search result should not be null");
-        assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");
+        assertNotEquals(0, result.getEvaluation(), "Evaluation for " + result.getBestMove() + " should not be zero");
         assertNotNull(result.getBestMove(), "Best move should not be null");
     }
 
@@ -57,11 +61,11 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(new SearchConfig(0, 10000, 10));
+        SearchResult result = searcher.search(new SearchConfig(0, TEN_SECONDS, 10));
 
         System.out.println(result);
         assertNotNull(result, "Search result should not be null");
-        assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");
+        assertNotEquals(0, result.getEvaluation(), "Evaluation for " + result.getBestMove() + " should not be zero");
         assertNotNull(result.getBestMove(), "Best move should not be null");
     }
 
@@ -71,11 +75,27 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(new SearchConfig(0, 150000, 10));
+        SearchResult result = searcher.search(new SearchConfig(0, Duration.ofMinutes(1L).plusSeconds(30L).toMillis(), 10));
 
         System.out.println(result);
         assertNotNull(result, "Search result should not be null");
         assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");
         assertNotNull(result.getBestMove(), "Best move should not be null");
     }
+
+    @Test
+    void testSearch_basic4_multiThreaded() {
+        BBoard board = new BBoard("r2q1bnr/p3kppp/2B5/8/3pN3/8/PPPP1PPP/R1Bb1RK1 w - - 1 11");
+
+        IterativeDeepening searcher = new IterativeDeepening(board);
+
+        SearchResult result = searcher.search(new SearchConfig(0, Duration.ofMinutes(1L).plusSeconds(30L).toMillis(), 10));
+
+        System.out.println(result);
+        assertNotNull(result, "Search result should not be null");
+        assertNotEquals(0, result.getEvaluation(), "Evaluation should not be zero");
+        assertNotNull(result.getBestMove(), "Best move should not be null");
+    }
+
+
 }

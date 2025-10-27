@@ -248,11 +248,12 @@ public class IterativeDeepening {
         }
 
         for (BMove move : moves) {
-            board.makeMove(move, true);
+            BBoard childBoard = board.copy();
+            childBoard.makeMove(move, true);
 
-            int score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
+            int score = -negamax(childBoard, depth - 1, -beta, -alpha, ply + 1);
 
-            board.undoMove(move, true);
+            childBoard.undoMove(move, true);
 
             bestScore = Math.max(bestScore, score);
             alpha = Math.max(alpha, score);
