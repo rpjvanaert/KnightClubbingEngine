@@ -11,7 +11,11 @@ public class MoveOrdering {
     private MoveOrdering() {}
 
     public static BMove[] orderMoves(BBoard board, BMove[] moves, OrderStrategy strategy) {
-        return switch (strategy) {
+        return orderMoves(board, moves, strategy, null);
+    }
+
+    public static BMove[] orderMoves(BBoard board, BMove[] moves, OrderStrategy strategy, BMove ttBestMove) {
+        BMove[] orderedMoves = switch (strategy) {
             case GENERAL -> {
                 Arrays.sort(moves, new GeneralComparator(board));
                 yield moves;
@@ -28,6 +32,12 @@ public class MoveOrdering {
             }
 
         };
+
+        if (ttBestMove != null) {
+            return moveTTBestMoveToFront(orderedMoves, ttBestMove);
+        }
+
+        return orderedMoves;
     }
 
     private static BMove[] filter(BMove[] moves, Predicate<BMove> predicate) {
@@ -39,5 +49,23 @@ public class MoveOrdering {
         }
 
         return Arrays.copyOf(temp, count);
+    }
+
+    private static BMove[] moveTTBestMoveToFront(BMove[] moves, BMove ttBestMove) {
+        int ttMoveIndex = -1;
+        for (int i = 0; i < moves.length; i++) {
+            if (moves[i].equals(ttBestMove)) {
+                ttMoveIndex = i;
+                break;
+            }
+        }
+
+        if (ttMoveIndex > 0) {
+            BMove temp = moves[0];
+            moves[0] = ttBestMove;
+            moves[ttMoveIndex] = temp;
+        }
+
+        return moves;
     }
 }

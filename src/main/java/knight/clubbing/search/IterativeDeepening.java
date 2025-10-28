@@ -85,7 +85,6 @@ public class IterativeDeepening {
         int beta = prevResult == null ? INF : prevResult.getEvaluation() + ASPIRATION_WINDOW;
 
         BMove[] moves = new MoveGenerator(board).generateMoves(false);
-        MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
 
         if (config.threads() == 1)
             return searchSingleThreaded(depth, moves, beta, alpha, result);
@@ -98,6 +97,15 @@ public class IterativeDeepening {
     }
 
     private SearchResult searchMultiThreaded(int depth, SearchConfig config, BMove[] moves, int beta, int alpha) {
+        long zobristKey = board.state.getZobristKey();
+        TranspositionEntry ttEntry;
+        synchronized (transpositionTable) {
+            ttEntry = transpositionTable.get(zobristKey);
+        }
+        BMove ttBestMove = (ttEntry != null) ? ttEntry.move() : null;
+
+        moves = MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL, ttBestMove);
+
         ExecutorService executor = Executors.newFixedThreadPool(config.threads());
         List<Future<SearchResult>> futures = new ArrayList<>();
         SearchResult bestResult = new SearchResult();
@@ -169,7 +177,6 @@ public class IterativeDeepening {
                 }
             }
         } catch (InterruptedException e) {
-            // Restore interrupt status and signal stop
             Thread.currentThread().interrupt();
             stopSearch = true;
             System.err.println("Search interrupted");
@@ -191,6 +198,15 @@ public class IterativeDeepening {
     }
 
     private SearchResult searchSingleThreaded(int depth, BMove[] moves, int beta, int alpha, SearchResult result) {
+        long zobristKey = board.state.getZobristKey();
+        TranspositionEntry ttEntry;
+        synchronized (transpositionTable) {
+            ttEntry = transpositionTable.get(zobristKey);
+        }
+        BMove ttBestMove = (ttEntry != null) ? ttEntry.move() : null;
+
+        moves = MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL, ttBestMove);
+
         for (BMove move : moves) {
             if (stopSearch || cantUseTime() || Thread.currentThread().isInterrupted()) {
                 stopSearch = true;
@@ -256,7 +272,9 @@ public class IterativeDeepening {
         BMove bestMove = null;
 
         BMove[] moves = new MoveGenerator(board).generateMoves(false);
-        MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
+
+        BMove ttBestMove = (entry != null) ? entry.move() : null;
+        moves = MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL, ttBestMove);
 
         if (moves.length == 0) {
             if (board.isInCheck())
@@ -284,7 +302,6 @@ public class IterativeDeepening {
             }
         }
 
-        // Determine the bound type based on how the score relates to the window
         short flag;
         if (bestScore <= alphaOrig) {
             flag = TranspositionEntry.UPPER_BOUND;
@@ -294,7 +311,6 @@ public class IterativeDeepening {
             flag = TranspositionEntry.EXACT;
         }
 
-        // Always store entry with depth, score, bound, best-move, and age
         synchronized (transpositionTable) {
             transpositionTable.put(new TranspositionEntry(
                 zobristKey,
