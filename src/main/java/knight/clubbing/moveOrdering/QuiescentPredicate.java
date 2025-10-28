@@ -18,8 +18,8 @@ public class QuiescentPredicate implements Predicate<BMove> {
         if (isCapture(move))
             return true;
 
-        //if (isCheck(move))
-            //return true;
+        if (isCheck(move))
+            return true;
 
         if (move.isPromotion())
             return true;

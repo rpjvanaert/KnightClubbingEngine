@@ -37,13 +37,10 @@ public class GeneralComparator implements Comparator<BMove> {
         if (targetSquare >= 27 && targetSquare <= 36)
             score += 25;
 
-        /*
         BBoard copy = board.copy();
         copy.makeMove(move, true);
         if (copy.isInCheck())
             score += 420;
-
-         */
 
         if (move.isCastle())
             score += 50;
