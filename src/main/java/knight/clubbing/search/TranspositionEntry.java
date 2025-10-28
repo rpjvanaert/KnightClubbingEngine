@@ -7,7 +7,8 @@ public record TranspositionEntry(
         int value,
         BMove move,
         short depth,
-        short nodeType
+        short nodeType,
+        int age
 ) {
 
     public static final short EXACT = 0;

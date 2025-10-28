@@ -70,6 +70,7 @@ public class IterativeDeepening {
 
     private void initializeSearch() {
         this.startTime = System.currentTimeMillis();
+        this.transpositionTable.incrementAge();
     }
 
     private boolean cantUseTime() {
@@ -228,6 +229,7 @@ public class IterativeDeepening {
             return 0;
         }
 
+        int alphaOrig = alpha;
         long zobristKey = board.state.getZobristKey();
         TranspositionEntry entry;
         synchronized (transpositionTable) {
@@ -251,6 +253,7 @@ public class IterativeDeepening {
             return quiesce(board, alpha, beta, ply);
 
         int bestScore = -INF;
+        BMove bestMove = null;
 
         BMove[] moves = new MoveGenerator(board).generateMoves(false);
         MoveOrdering.orderMoves(board, moves, OrderStrategy.GENERAL);
@@ -270,14 +273,20 @@ public class IterativeDeepening {
 
             childBoard.undoMove(move, true);
 
-            bestScore = Math.max(bestScore, score);
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = move;
+            }
+
             alpha = Math.max(alpha, score);
-            if (alpha >= beta)
+            if (alpha >= beta) {
                 break;
+            }
         }
 
+        // Determine the bound type based on how the score relates to the window
         short flag;
-        if (bestScore <= alpha) {
+        if (bestScore <= alphaOrig) {
             flag = TranspositionEntry.UPPER_BOUND;
         } else if (bestScore >= beta) {
             flag = TranspositionEntry.LOWER_BOUND;
@@ -285,8 +294,16 @@ public class IterativeDeepening {
             flag = TranspositionEntry.EXACT;
         }
 
+        // Always store entry with depth, score, bound, best-move, and age
         synchronized (transpositionTable) {
-            transpositionTable.put(new TranspositionEntry(zobristKey, bestScore, null, (short) depth, flag));
+            transpositionTable.put(new TranspositionEntry(
+                zobristKey,
+                bestScore,
+                bestMove,
+                (short) depth,
+                flag,
+                transpositionTable.getCurrentAge()
+            ));
         }
 
         return bestScore;
