@@ -11,9 +11,7 @@ import knight.clubbing.opening.OpeningService;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 import static knight.clubbing.search.SearchConstants.INF;
 import static knight.clubbing.search.SearchConstants.MATE;
@@ -24,7 +22,7 @@ public class IterativeDeepening {
 
     private BBoard board;
     private SearchConfig config;
-    private boolean stopSearch;
+    private volatile boolean stopSearch;
     private SearchResult bestResult;
     private long startTime;
 
@@ -46,7 +44,6 @@ public class IterativeDeepening {
             OpeningBookEntry entry = openingService.getBest(board.state.getZobristKey());
             return new SearchResult(entry.getMove(), entry.getScore());
         }
-
 
         this.config = config;
         this.stopSearch = false;
@@ -76,7 +73,6 @@ public class IterativeDeepening {
     }
 
     private boolean cantUseTime() {
-
         return System.currentTimeMillis() - startTime >= config.timeLimit();
     }
 
@@ -122,7 +118,7 @@ public class IterativeDeepening {
                 threadResult.setEvaluation(-INF);
 
                 for (BMove move : threadMoves) {
-                    if (stopSearch || cantUseTime()) {
+                    if (stopSearch || cantUseTime() || Thread.currentThread().isInterrupted()) {
                         stopSearch = true;
                         break;
                     }
@@ -135,7 +131,7 @@ public class IterativeDeepening {
                     int threadBeta = beta;
 
                     do {
-                        score = -negamax(threadBoard.copy(), depth, -threadBeta, -threadAlpha, 0);
+                        score = -negamax(threadBoard, depth, -threadBeta, -threadAlpha, 0);
 
                         if (score <= threadAlpha) {
                             threadAlpha -= ASPIRATION_WINDOW;
@@ -160,18 +156,34 @@ public class IterativeDeepening {
             futures.add(future);
         }
 
-        // Collect results from all threads
         try {
             for (Future<SearchResult> future : futures) {
+                if (stopSearch) {
+                    future.cancel(true);
+                    continue;
+                }
                 SearchResult threadResult = future.get();
                 if (threadResult.getEvaluation() > bestResult.getEvaluation()) {
                     bestResult = threadResult;
                 }
             }
-        } catch (Exception e) {
-            System.err.println("Error in multi-threaded search: " + e.getMessage());
+        } catch (InterruptedException e) {
+            // Restore interrupt status and signal stop
+            Thread.currentThread().interrupt();
+            stopSearch = true;
+            System.err.println("Search interrupted");
+        } catch (ExecutionException e) {
+            System.err.println("Error in multi-threaded search: " + e.getCause());
         } finally {
-            executor.shutdown();
+            executor.shutdownNow();
+            try {
+                if (!executor.awaitTermination(500, TimeUnit.MILLISECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                executor.shutdownNow();
+            }
         }
 
         return bestResult;
@@ -179,7 +191,7 @@ public class IterativeDeepening {
 
     private SearchResult searchSingleThreaded(int depth, BMove[] moves, int beta, int alpha, SearchResult result) {
         for (BMove move : moves) {
-            if (stopSearch || cantUseTime()) {
+            if (stopSearch || cantUseTime() || Thread.currentThread().isInterrupted()) {
                 stopSearch = true;
                 break;
             }
@@ -211,13 +223,16 @@ public class IterativeDeepening {
     }
 
     private int negamax(BBoard board, int depth, int alpha, int beta, int ply) {
-        if (stopSearch || cantUseTime()) {
+        if (stopSearch || cantUseTime() || Thread.currentThread().isInterrupted()) {
             stopSearch = true;
             return 0;
         }
 
         long zobristKey = board.state.getZobristKey();
-        TranspositionEntry entry = transpositionTable.get(zobristKey);
+        TranspositionEntry entry;
+        synchronized (transpositionTable) {
+            entry = transpositionTable.get(zobristKey);
+        }
         if (entry != null && entry.depth() >= depth) {
             if (entry.nodeType() == TranspositionEntry.EXACT) {
                 return entry.value();
@@ -270,13 +285,15 @@ public class IterativeDeepening {
             flag = TranspositionEntry.EXACT;
         }
 
-        transpositionTable.put(new TranspositionEntry(zobristKey, bestScore, null, (short) depth, flag));
+        synchronized (transpositionTable) {
+            transpositionTable.put(new TranspositionEntry(zobristKey, bestScore, null, (short) depth, flag));
+        }
 
         return bestScore;
     }
 
     private int quiesce(BBoard board, int alpha, int beta, int ply) {
-        if (stopSearch || cantUseTime()) {
+        if (stopSearch || cantUseTime() || Thread.currentThread().isInterrupted()) {
             stopSearch = true;
             return 0;
         }

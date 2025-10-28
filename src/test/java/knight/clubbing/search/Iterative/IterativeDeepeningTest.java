@@ -75,7 +75,7 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(new SearchConfig(0, Duration.ofMinutes(1L).plusSeconds(30L).toMillis(), 10));
+        SearchResult result = searcher.search(new SearchConfig(0, TEN_SECONDS, 10));
 
         System.out.println(result);
         assertNotNull(result, "Search result should not be null");
@@ -89,7 +89,7 @@ class IterativeDeepeningTest {
 
         IterativeDeepening searcher = new IterativeDeepening(board);
 
-        SearchResult result = searcher.search(new SearchConfig(0, Duration.ofMinutes(1L).plusSeconds(30L).toMillis(), 10));
+        SearchResult result = searcher.search(new SearchConfig(0, TEN_SECONDS, 10));
 
         System.out.println(result);
         assertNotNull(result, "Search result should not be null");
