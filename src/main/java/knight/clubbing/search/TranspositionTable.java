@@ -16,16 +16,37 @@ public class TranspositionTable {
     public void put(TranspositionEntry entry) {
         TranspositionEntry existing = table.get(entry.key());
 
-        // Always replace if:
-        // - No existing entry
-        // - New entry has greater depth
-        // - Same depth but newer age
-        // - Entry is from a previous search (old age)
-        if (existing == null ||
-            entry.depth() >= existing.depth() ||
-            entry.age() > existing.age()) {
+        // Always insert if no existing entry
+        if (existing == null) {
+            table.put(entry.key(), entry);
+            return;
+        }
+
+        // Always replace stale entries (from previous searches)
+        if (existing.age() < currentAge) {
+            table.put(entry.key(), entry);
+            return;
+        }
+
+        if (entry.depth() >= existing.depth()) {
+            table.put(entry.key(), entry);
+            return;
+        }
+
+        int score = calculateReplacementScore(entry, existing);
+        if (score > 0) {
             table.put(entry.key(), entry);
         }
+    }
+
+    private int calculateReplacementScore(TranspositionEntry newEntry, TranspositionEntry existing) {
+        final int DEPTH_WEIGHT = 4;
+        final int AGE_WEIGHT = 1;
+
+        int depthDiff = newEntry.depth() - existing.depth();
+        int ageDiff = newEntry.age() - existing.age();
+
+        return depthDiff * DEPTH_WEIGHT + ageDiff * AGE_WEIGHT;
     }
 
     public TranspositionEntry get(long key) {
