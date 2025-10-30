@@ -4,12 +4,14 @@ import knight.clubbing.core.BBoard;
 import knight.clubbing.search.IterativeDeepening;
 import knight.clubbing.search.SearchConfig;
 import knight.clubbing.search.SearchResult;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("strength")
 class IterativeDeepeningTest {
 
     public static final long TEN_SECONDS = Duration.ofSeconds(10L).toMillis();
