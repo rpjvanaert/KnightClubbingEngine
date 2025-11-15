@@ -18,8 +18,6 @@ import static knight.clubbing.search.SearchConstants.MATE;
 
 public class IterativeDeepening {
 
-    private static final int ASPIRATION_WINDOW = 50;
-
     private BBoard board;
     private SearchConfig config;
     private volatile boolean stopSearch;
@@ -86,8 +84,8 @@ public class IterativeDeepening {
     private SearchResult searchAtDepth(int depth, SearchResult prevResult, SearchConfig config) {
         SearchResult result = new SearchResult();
 
-        int alpha = prevResult == null ? -INF : prevResult.getEvaluation() - ASPIRATION_WINDOW;
-        int beta = prevResult == null ? INF : prevResult.getEvaluation() + ASPIRATION_WINDOW;
+        int alpha = -INF;
+        int beta = INF;
 
         BMove[] moves = new MoveGenerator(board).generateMoves(false);
 
@@ -140,22 +138,7 @@ public class IterativeDeepening {
                     BBoard threadBoard = board.copy();
                     threadBoard.makeMove(move, true);
 
-                    int score;
-                    int threadAlpha = alpha;
-                    int threadBeta = beta;
-
-                    do {
-                        // call negamax with depth-1 and ply = 1 since we've already made one move
-                        score = -negamax(threadBoard, depth - 1, -threadBeta, -threadAlpha, 1);
-
-                        if (score <= threadAlpha) {
-                            threadAlpha -= ASPIRATION_WINDOW;
-                        } else if (score >= threadBeta) {
-                            threadBeta += ASPIRATION_WINDOW;
-                        } else {
-                            break;
-                        }
-                    } while (true);
+                    int score = -negamax(threadBoard, depth - 1, -beta, -alpha, 1);
 
                     threadBoard.undoMove(move, true);
 
@@ -221,19 +204,8 @@ public class IterativeDeepening {
 
             board.makeMove(move, true);
 
-            int score;
-            do {
-                // call negamax with depth-1 and ply = 1 since we've already made one move
-                score = -negamax(board.copy(), depth - 1, -beta, -alpha, 1);
-
-                if (score <= alpha) {
-                    alpha -= ASPIRATION_WINDOW;
-                } else if (score >= beta) {
-                    beta += ASPIRATION_WINDOW;
-                } else {
-                    break;
-                }
-            } while (true);
+            // call negamax with depth-1 and ply = 1 since we've already made one move
+            int score = -negamax(board.copy(), depth - 1, -beta, -alpha, 1);
 
             board.undoMove(move, true);
 
