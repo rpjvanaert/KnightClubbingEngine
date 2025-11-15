@@ -53,11 +53,11 @@ public class Stockfish implements AutoCloseable {
     }
 
     protected void stop() throws IOException {
-        sendCommand("stop", _ -> true);
+        sendCommand("stop", e -> true);
     }
 
     public void quit() throws IOException {
-        sendCommand("quit", _ -> true);
+        sendCommand("quit", e -> true);
         process.destroy();
     }
 
@@ -70,7 +70,7 @@ public class Stockfish implements AutoCloseable {
     }
 
     private String bestMoveCommand(String positionCommand, int depth) throws IOException {
-        sendCommand(positionCommand, _ -> true);
+        sendCommand(positionCommand, e -> true);
         String response = sendCommand("go depth " + depth, line -> line.startsWith("bestmove"));
         return getBestMove(response);
     }
@@ -86,7 +86,7 @@ public class Stockfish implements AutoCloseable {
     }
 
     public OpeningBookEntry topMove(String positionCommand, long zobrist, int depth) throws IOException {
-        sendCommand(positionCommand, _ -> true);
+        sendCommand(positionCommand, e -> true);
         String response = sendCommand("go depth " + depth, line -> line.startsWith("bestmove"));
 
         String[] responseLines = response.split("\n");
@@ -116,7 +116,7 @@ public class Stockfish implements AutoCloseable {
     }
 
     public String getEval(String positionCommand, int depth) throws IOException {
-        sendCommand(positionCommand, _ -> true);
+        sendCommand(positionCommand, e -> true);
         String response = sendCommand("go depth " + depth, line -> line.startsWith("bestmove"));
 
         String[] responseLines = response.split("\n");

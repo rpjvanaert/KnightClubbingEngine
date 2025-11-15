@@ -50,4 +50,28 @@ class UCITest {
         uci.handleGo("go");
         //Thread.sleep(100000);
     }
+
+    @Tag("uci")
+    @Test
+    void testArenaCommand_issue1() throws InterruptedException {
+        UCI uci = new UCI();
+        String command1 = "uci";
+        String command2 = "isready";
+        String command3 = "ucinewgame";
+        String command4 = "position startpos";
+        String command5 = "position startpos moves c2c4";
+        String command6 = "isready";
+        String command7 = "go wtime 300000 btime 300000 winc 0 binc 0";
+
+
+        uci.handleCommand(command1);
+        uci.handleCommand(command2);
+        uci.handleCommand(command3);
+        uci.handleCommand(command4);
+        uci.handleCommand(command5);
+        uci.handleCommand(command6);
+        uci.handleCommand(command7);
+
+        Thread.sleep(100000);
+    }
 }

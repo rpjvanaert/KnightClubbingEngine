@@ -2,6 +2,9 @@ package knight.clubbing;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
+import knight.clubbing.moveOrdering.MoveOrdering;
+import knight.clubbing.moveOrdering.OrderStrategy;
+import knight.clubbing.movegen.MoveGenerator;
 import knight.clubbing.search.IterativeDeepening;
 import knight.clubbing.search.SearchConfig;
 import knight.clubbing.search.SearchResult;
@@ -90,7 +93,7 @@ public class UCI {
     private void logText(String text, String location) {
         try (PrintWriter log = new PrintWriter(new FileWriter(location, true))) {
             log.println(text);
-        } catch (IOException _) {
+        } catch (IOException e) {
         }
     }
 
@@ -131,8 +134,7 @@ public class UCI {
     }
 
     protected void handleGo(String line) {
-        int depth = DEFAULT_DEPTH;
-        int wtime = -1, btime = -1, winc = 0, binc = 0;
+        int wtime = -1, btime = -1, winc = 0, binc = 0, depthInput = -1;
         boolean whiteToMove = board.isWhiteToMove;
 
         String[] parts = line.split(" ");
@@ -151,7 +153,7 @@ public class UCI {
                     if (i + 1 < parts.length) binc = Integer.parseInt(parts[++i]);
                     break;
                 case "depth":
-                    if (i + 1 < parts.length) depth = Integer.parseInt(parts[++i]);
+                    if (i + 1 < parts.length) depthInput = Integer.parseInt(parts[++i]);
                     break;
             }
         }
@@ -159,14 +161,16 @@ public class UCI {
 
         int time = whiteToMove ? wtime : btime;
         int inc = whiteToMove ? winc : binc;
+        int depth = depthInput > 0 ? depthInput : DEFAULT_DEPTH;
 
         searchThread = new Thread(() -> {
-            BMove move = null;
+            String move = "";
             try {
                 int moveTime = Math.min(time / 30 + inc, time / 2);
                 moveTime = Math.max(10, Math.min(moveTime, time - 10));
 
-                SearchResult result = iterativeDeepening.search(new SearchConfig(10, moveTime, MAX_THREADED_MOVES));
+                SearchResult result = iterativeDeepening.search(new SearchConfig(depth, moveTime, Runtime.getRuntime().availableProcessors() - 2));
+                move = result.getBestMove();
             } catch (Throwable t) {
                 t.printStackTrace();
                 try (PrintWriter log = new PrintWriter(new FileWriter("engine_crash.log", true))) {
@@ -177,12 +181,14 @@ public class UCI {
                     stringBuilder.append("------\n");
                     String string = stringBuilder.toString();
                     log.println(string);
-                } catch (IOException _) {}
+                } catch (IOException e) {}
             } finally {
-                if (move != null) {
-                    sendCommand("bestmove " + move.getUci());
+                if (move != null && !move.isEmpty()) {
+                    sendCommand("bestmove " + move);
                 } else {
-                    sendCommand("bestmove 0000");
+                    BMove[] someMoves = new MoveGenerator(board).generateMoves(false);
+                    someMoves = MoveOrdering.orderMoves(board, someMoves, OrderStrategy.GENERAL);
+                    sendCommand("bestmove " + someMoves[0].getUci());
                 }
             }
         });

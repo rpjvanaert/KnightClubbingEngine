@@ -16,7 +16,7 @@ class UciIntegrationTest {
 
     private static Stream<File> provideUciTestFiles() {
         File folder = new File(UCI_TEST_DIR);
-        return Stream.of(folder.listFiles((_, name) -> name.endsWith(".uci")));
+        return Stream.of(folder.listFiles((e, name) -> name.endsWith(".uci")));
     }
 
     @Tag("uci")
@@ -44,7 +44,7 @@ class UciIntegrationTest {
             Thread.sleep(10000); // todo remove sleep and instead wait if needed?
             uciThread.interrupt(); // gracefully interrupt
 
-        } catch (InterruptedException _) {
+        } catch (InterruptedException e) {
             fail("Test was interrupted");
         } finally {
             System.setOut(originalOut);

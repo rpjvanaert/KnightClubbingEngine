@@ -75,7 +75,7 @@ public class PrecomputedEvaluationData {
         List<Integer> shieldSquaresBlack = new ArrayList<>();
         BCoord coord = new BCoord(squareIndex);
         int rank = coord.getRankIndex();
-        int file = Math.clamp(coord.getFileIndex(), 1, 6);
+        int file = clamp(coord.getFileIndex(), 1, 6);
 
         for (int fileOffset = -1; fileOffset <= 1; fileOffset++) {
             addToList(file, fileOffset, rank + 1, shieldSquaresWhite);
@@ -87,6 +87,10 @@ public class PrecomputedEvaluationData {
 
         pawnShieldSquaresWhite[squareIndex] = shieldSquaresWhite.stream().mapToInt(i -> i).toArray();
         pawnShieldSquaresBlack[squareIndex] = shieldSquaresBlack.stream().mapToInt(i -> i).toArray();
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(value, max));
     }
 
     private static void addToList(int file, int fileOffset, int rank, List<Integer> shieldSquares) {

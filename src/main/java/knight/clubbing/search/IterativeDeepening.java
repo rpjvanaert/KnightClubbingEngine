@@ -40,6 +40,7 @@ public class IterativeDeepening {
     }
 
     public SearchResult search(SearchConfig config) {
+        System.out.println("info string searching with config: " + config);
         if (openingService.exists(board.state.getZobristKey())) {
             OpeningBookEntry entry = openingService.getBest(board.state.getZobristKey());
             return new SearchResult(entry.getMove(), entry.getScore());
@@ -50,6 +51,7 @@ public class IterativeDeepening {
         this.bestResult = new SearchResult();
 
         initializeSearch();
+        System.out.println("info string starting search");
 
         for (int depth = 1; !stopSearch; depth++) {
 
@@ -58,6 +60,10 @@ public class IterativeDeepening {
             if (stopSearch) break;
 
             this.bestResult = result;
+
+            long elapsed = System.currentTimeMillis() - startTime;
+            String pv = result.getBestMove() != null ? result.getBestMove().toString() : "";
+            System.out.println("info depth " + depth + " score cp " + result.getEvaluation() + " time " + elapsed + " pv " + pv);
 
             if (isDecisive(result)) {
                 break;
@@ -78,7 +84,6 @@ public class IterativeDeepening {
     }
 
     private SearchResult searchAtDepth(int depth, SearchResult prevResult, SearchConfig config) {
-        System.out.println("Searching at depth: " + depth);
         SearchResult result = new SearchResult();
 
         int alpha = prevResult == null ? -INF : prevResult.getEvaluation() - ASPIRATION_WINDOW;
@@ -140,7 +145,8 @@ public class IterativeDeepening {
                     int threadBeta = beta;
 
                     do {
-                        score = -negamax(threadBoard, depth, -threadBeta, -threadAlpha, 0);
+                        // call negamax with depth-1 and ply = 1 since we've already made one move
+                        score = -negamax(threadBoard, depth - 1, -threadBeta, -threadAlpha, 1);
 
                         if (score <= threadAlpha) {
                             threadAlpha -= ASPIRATION_WINDOW;
@@ -155,7 +161,7 @@ public class IterativeDeepening {
 
                     if (score > threadResult.getEvaluation()) {
                         threadResult.setEvaluation(score);
-                        threadResult.setBestMove(move.toString());
+                        threadResult.setBestMove(move.getUci());
                     }
                 }
 
@@ -217,7 +223,8 @@ public class IterativeDeepening {
 
             int score;
             do {
-                score = -negamax(board.copy(), depth, -beta, -alpha, 0);
+                // call negamax with depth-1 and ply = 1 since we've already made one move
+                score = -negamax(board.copy(), depth - 1, -beta, -alpha, 1);
 
                 if (score <= alpha) {
                     alpha -= ASPIRATION_WINDOW;
@@ -232,7 +239,7 @@ public class IterativeDeepening {
 
             if (score > result.getEvaluation()) {
                 result.setEvaluation(score);
-                result.setBestMove(move.toString());
+                result.setBestMove(move.getUci());
             }
         }
 
@@ -313,12 +320,12 @@ public class IterativeDeepening {
 
         synchronized (transpositionTable) {
             transpositionTable.put(new TranspositionEntry(
-                zobristKey,
-                bestScore,
-                bestMove,
-                (short) depth,
-                flag,
-                transpositionTable.getCurrentAge()
+                    zobristKey,
+                    bestScore,
+                    bestMove,
+                    (short) depth,
+                    flag,
+                    transpositionTable.getCurrentAge()
             ));
         }
 
