@@ -166,8 +166,13 @@ public class UCI {
         searchThread = new Thread(() -> {
             String move = "";
             try {
-                int moveTime = Math.min(time / 30 + inc, time / 2);
-                moveTime = Math.max(10, Math.min(moveTime, time - 10));
+                int moveTime;
+                if (time > 0) {
+                    moveTime = Math.min(time / 30 + inc, time / 2);
+                    moveTime = Math.max(10, Math.min(moveTime, time - 10));
+                } else {
+                    moveTime = 60000; // 60 seconds default
+                }
 
                 SearchResult result = iterativeDeepening.search(new SearchConfig(depth, moveTime, Runtime.getRuntime().availableProcessors() - 2));
                 move = result.getBestMove();

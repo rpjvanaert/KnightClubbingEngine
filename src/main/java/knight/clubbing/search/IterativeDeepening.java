@@ -51,7 +51,7 @@ public class IterativeDeepening {
         initializeSearch();
         System.out.println("info string starting search");
 
-        for (int depth = 1; !stopSearch; depth++) {
+        for (int depth = 1; !stopSearch && depth <= config.maxDepth(); depth++) {
 
             SearchResult result = searchAtDepth(depth, this.bestResult, config);
 
@@ -60,7 +60,7 @@ public class IterativeDeepening {
             this.bestResult = result;
 
             long elapsed = System.currentTimeMillis() - startTime;
-            String pv = result.getBestMove() != null ? result.getBestMove().toString() : "";
+            String pv = result.getBestMove() != null ? result.getBestMove() : "";
             System.out.println("info depth " + depth + " score cp " + result.getEvaluation() + " time " + elapsed + " pv " + pv);
 
             if (isDecisive(result)) {
@@ -83,6 +83,7 @@ public class IterativeDeepening {
 
     private SearchResult searchAtDepth(int depth, SearchResult prevResult, SearchConfig config) {
         SearchResult result = new SearchResult();
+        result.setEvaluation(-INF);
 
         int alpha = -INF;
         int beta = INF;
@@ -213,6 +214,8 @@ public class IterativeDeepening {
                 result.setEvaluation(score);
                 result.setBestMove(move.getUci());
             }
+
+            alpha = Math.max(alpha, score);
         }
 
         return result;
@@ -245,7 +248,8 @@ public class IterativeDeepening {
         }
 
         if (depth <= 0 || stopSearch)
-            return quiesce(board, alpha, beta, ply);
+            return Evaluation.evaluate(board);
+            //return quiesce(board, alpha, beta, ply);
 
         int bestScore = -INF;
         BMove bestMove = null;
