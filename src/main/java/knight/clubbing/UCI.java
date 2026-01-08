@@ -5,6 +5,9 @@ import knight.clubbing.core.BMove;
 import knight.clubbing.moveOrdering.MoveOrdering;
 import knight.clubbing.moveOrdering.OrderStrategy;
 import knight.clubbing.movegen.MoveGenerator;
+import knight.clubbing.revamp.search.Negamax;
+import knight.clubbing.revamp.search.SearchResponse;
+import knight.clubbing.revamp.search.SearchSettings;
 import knight.clubbing.search.IterativeDeepening;
 import knight.clubbing.search.SearchConfig;
 import knight.clubbing.search.SearchResult;
@@ -34,6 +37,7 @@ public class UCI {
     private BBoard board;
     private Thread searchThread;
     private IterativeDeepening iterativeDeepening;
+    private Negamax negamax;
 
     protected BBoard getBoard() {
         return board;
@@ -157,7 +161,8 @@ public class UCI {
                     break;
             }
         }
-        iterativeDeepening = new IterativeDeepening(board);
+        //iterativeDeepening = new IterativeDeepening(board);
+        negamax = new Negamax();
 
         int time = whiteToMove ? wtime : btime;
         int inc = whiteToMove ? winc : binc;
@@ -174,8 +179,10 @@ public class UCI {
                     moveTime = 60000; // 60 seconds default
                 }
 
-                SearchResult result = iterativeDeepening.search(new SearchConfig(depth, moveTime, Runtime.getRuntime().availableProcessors() - 2));
-                move = result.getBestMove();
+                SearchResponse response = negamax.search(board, new SearchSettings(depth, moveTime, 1, false));
+                //SearchResult result = iterativeDeepening.search(new SearchConfig(depth, moveTime, Runtime.getRuntime().availableProcessors() - 2));
+                //move = result.getBestMove();
+                move = response.bestMove();
             } catch (Throwable t) {
                 t.printStackTrace();
                 try (PrintWriter log = new PrintWriter(new FileWriter("engine_crash.log", true))) {
