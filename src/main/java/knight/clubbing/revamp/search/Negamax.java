@@ -36,6 +36,7 @@ public class Negamax implements Search {
     @Override
     public SearchResponse search(BBoard board, SearchSettings settings) {
         startTime = System.currentTimeMillis();
+        timeLimit = startTime + settings.timeLimit();
 
         if (openingService.exists(board.state.getZobristKey())) {
             OpeningBookEntry entry = openingService.getBest(board.state.getZobristKey());
@@ -51,7 +52,7 @@ public class Negamax implements Search {
             SearchResponse result = searchAtDepth(board, depth);
             bestResponse = result;
 
-            if (stop) break;
+            if (shouldStop()) break;
 
             long elapsed = getTimeTakenMillis();
             String pv = result.bestMove() != null ? result.bestMove() : "";
@@ -82,7 +83,7 @@ public class Negamax implements Search {
         orderer.order(nextMoves, board);
 
         for (BMove move : nextMoves) {
-            if (stop) break;
+            if (shouldStop()) break;
 
             board.makeMove(move, true);
             int score = -negamax(board, depth - 1, -beta, -alpha, 1);
@@ -101,7 +102,6 @@ public class Negamax implements Search {
 
     private int negamax(BBoard board, int depth, int alpha, int beta, int ply) {
         if (shouldStop()) {
-            stop = true;
             return 0;
         }
 
@@ -153,6 +153,8 @@ public class Negamax implements Search {
     }
 
     private boolean shouldStop() {
-        return timeLimit > 0 && getTimeTakenMillis() >= timeLimit;
+        if (stop) return true;
+        stop = timeLimit > 0 && System.currentTimeMillis() >= timeLimit;
+        return stop;
     }
 }
