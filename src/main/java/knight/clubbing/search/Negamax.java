@@ -50,7 +50,6 @@ public class Negamax implements Search {
         this.settings = settings;
         this.stop = false;
         SearchResponse bestResponse = null;
-        System.out.println("idk: " + settings);
 
         for (int depth = 1; !stop && depth <= settings.maxDepth(); depth++) {
 
