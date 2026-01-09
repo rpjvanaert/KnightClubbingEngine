@@ -1,4 +1,4 @@
-package knight.clubbing.revamp.search;
+package knight.clubbing.search;
 
 public record SearchResponse (
         int score,

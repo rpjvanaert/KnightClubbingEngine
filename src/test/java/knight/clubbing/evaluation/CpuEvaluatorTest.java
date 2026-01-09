@@ -1,6 +1,8 @@
-package knight.clubbing.revamp.evaluation;
+package knight.clubbing.evaluation;
 
 import knight.clubbing.core.BBoard;
+import knight.clubbing.evaluation.CpuEvaluator;
+import knight.clubbing.evaluation.EvalFeature;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

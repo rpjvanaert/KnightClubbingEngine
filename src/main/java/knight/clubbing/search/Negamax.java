@@ -1,18 +1,19 @@
-package knight.clubbing.revamp.search;
+package knight.clubbing.search;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.movegen.MoveGenerator;
 import knight.clubbing.opening.OpeningBookEntry;
 import knight.clubbing.opening.OpeningService;
-import knight.clubbing.revamp.evaluation.CpuEvaluator;
-import knight.clubbing.revamp.evaluation.Evaluator;
-import knight.clubbing.revamp.ordering.BasicMoveOrderer;
-import knight.clubbing.revamp.ordering.MoveOrderer;
-import knight.clubbing.revamp.ordering.MvvLvaFeature;
+import knight.clubbing.evaluation.CpuEvaluator;
+import knight.clubbing.evaluation.Evaluator;
+import knight.clubbing.ordering.BasicMoveOrderer;
+import knight.clubbing.ordering.MoveOrderer;
+import knight.clubbing.ordering.MoveOrderingContext;
+import knight.clubbing.ordering.MvvLvaFeature;
 
-import static knight.clubbing.search.SearchConstants.INF;
-import static knight.clubbing.search.SearchConstants.MATE;
+import static knight.clubbing.search.EngineConst.INF;
+import static knight.clubbing.search.EngineConst.MATE_SCORE;
 
 public class Negamax implements Search {
     private volatile boolean stop;
@@ -27,6 +28,9 @@ public class Negamax implements Search {
 
     private final OpeningService openingService;
 
+    private static final int MAX_DEPTH_KILLER = 32;
+    private final BMove[][] killerMoves = new BMove[MAX_DEPTH_KILLER][3];
+
     public Negamax() {
         this.openingService = new OpeningService();
         this.evaluator = new CpuEvaluator();
@@ -36,7 +40,7 @@ public class Negamax implements Search {
     @Override
     public SearchResponse search(BBoard board, SearchSettings settings) {
         startTime = System.currentTimeMillis();
-        timeLimit = startTime + settings.timeLimit();
+        timeLimit = settings.timeLimit();
 
         if (openingService.exists(board.state.getZobristKey())) {
             OpeningBookEntry entry = openingService.getBest(board.state.getZobristKey());
@@ -46,6 +50,7 @@ public class Negamax implements Search {
         this.settings = settings;
         this.stop = false;
         SearchResponse bestResponse = null;
+        System.out.println("idk: " + settings);
 
         for (int depth = 1; !stop && depth <= settings.maxDepth(); depth++) {
 
@@ -80,7 +85,7 @@ public class Negamax implements Search {
     private SearchResponse searchSingleThreaded(BBoard board, int depth, BMove[] nextMoves, int beta, int alpha, int bestScore) {
         String bestMove = null;
 
-        orderer.order(nextMoves, board);
+        orderer.order(nextMoves, board, new MoveOrderingContext(0, killerMoves));
 
         for (BMove move : nextMoves) {
             if (shouldStop()) break;
@@ -113,11 +118,11 @@ public class Negamax implements Search {
 
         BMove[] nextMoves = new MoveGenerator(board).generateMoves(false);
 
-        orderer.order(nextMoves, board);
+        orderer.order(nextMoves, board, new MoveOrderingContext(ply, killerMoves));
 
         if (nextMoves.length == 0) {
             if (board.isInCheck())
-                return board.isWhiteToMove ? -MATE + ply : MATE - ply;
+                return board.isWhiteToMove ? -MATE_SCORE + ply : MATE_SCORE - ply;
             else
                 return 0;
         }
@@ -137,6 +142,11 @@ public class Negamax implements Search {
 
             alpha = Math.max(alpha, score);
             if (alpha >= beta) {
+                if (killerMoves[ply][0] == null || !killerMoves[ply][0].equals(move)) {
+                    killerMoves[ply][2] = killerMoves[ply][1];
+                    killerMoves[ply][1] = killerMoves[ply][0];
+                    killerMoves[ply][0] = move;
+                }
                 break;
             }
         }
@@ -145,7 +155,7 @@ public class Negamax implements Search {
     }
 
     private boolean isDecisive(SearchResponse response) {
-        return Math.abs(response.score()) >= MATE - settings.maxDepth();
+        return Math.abs(response.score()) >= MATE_SCORE - settings.maxDepth();
     }
 
     private long getTimeTakenMillis() {
@@ -154,7 +164,7 @@ public class Negamax implements Search {
 
     private boolean shouldStop() {
         if (stop) return true;
-        stop = timeLimit > 0 && System.currentTimeMillis() >= timeLimit;
+        stop = timeLimit > 0 && getTimeTakenMillis() >= timeLimit;
         return stop;
     }
 }

@@ -1,4 +1,4 @@
-package knight.clubbing.revamp.evaluation;
+package knight.clubbing.evaluation;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BPiece;

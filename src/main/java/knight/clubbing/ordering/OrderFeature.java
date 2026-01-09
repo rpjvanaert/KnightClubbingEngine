@@ -1,4 +1,4 @@
-package knight.clubbing.revamp.ordering;
+package knight.clubbing.ordering;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;

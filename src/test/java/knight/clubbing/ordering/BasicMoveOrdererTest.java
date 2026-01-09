@@ -1,7 +1,9 @@
-package knight.clubbing.revamp.ordering;
+package knight.clubbing.ordering;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
+import knight.clubbing.ordering.BasicMoveOrderer;
+import knight.clubbing.ordering.OrderFeature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +41,7 @@ class BasicMoveOrdererTest {
         BasicMoveOrderer orderer = new BasicMoveOrderer(feature);
         BMove[] moves = {move1, move2, move3};
 
-        orderer.order(moves, mockBoard);
+        orderer.order(moves, mockBoard, null);
 
         assertEquals(move2, moves[0]);
         assertEquals(move3, moves[1]);
@@ -79,7 +81,7 @@ class BasicMoveOrdererTest {
         BasicMoveOrderer orderer = new BasicMoveOrderer(feature1, feature2);
         BMove[] moves = {move1, move2, move3};
 
-        orderer.order(moves, mockBoard);
+        orderer.order(moves, mockBoard, null);
 
         assertEquals(move1, moves[0]);
         assertEquals(move2, moves[1]);
@@ -102,7 +104,7 @@ class BasicMoveOrdererTest {
         BasicMoveOrderer orderer = new BasicMoveOrderer(feature);
         BMove[] moves = {};
 
-        assertDoesNotThrow(() -> orderer.order(moves, mockBoard));
+        assertDoesNotThrow(() -> orderer.order(moves, mockBoard, null));
     }
 
     @Test
@@ -121,7 +123,7 @@ class BasicMoveOrdererTest {
         BasicMoveOrderer orderer = new BasicMoveOrderer(feature);
         BMove[] moves = {move1};
 
-        orderer.order(moves, mockBoard);
+        orderer.order(moves, mockBoard, null);
 
         assertEquals(move1, moves[0]);
     }
@@ -142,7 +144,7 @@ class BasicMoveOrdererTest {
         BasicMoveOrderer orderer = new BasicMoveOrderer(feature);
         BMove[] moves = {move1, move2, move3};
 
-        orderer.order(moves, mockBoard);
+        orderer.order(moves, mockBoard, null);
 
         assertEquals(move1, moves[0]);
         assertEquals(move2, moves[1]);
@@ -154,7 +156,7 @@ class BasicMoveOrdererTest {
         BasicMoveOrderer orderer = new BasicMoveOrderer();
         BMove[] moves = {move1, move2, move3};
 
-        orderer.order(moves, mockBoard);
+        orderer.order(moves, mockBoard, null);
 
         assertEquals(move1, moves[0]);
         assertEquals(move2, moves[1]);

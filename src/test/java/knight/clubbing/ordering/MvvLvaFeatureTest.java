@@ -1,8 +1,6 @@
-package knight.clubbing.revamp.ordering;
+package knight.clubbing.ordering;
 
-import knight.clubbing.core.BBoard;
-import knight.clubbing.core.BMove;
-import knight.clubbing.core.BPiece;
+import knight.clubbing.ordering.MvvLvaFeature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

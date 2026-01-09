@@ -1,8 +1,9 @@
 package knight.clubbing.search;
 
-public record SearchConfig (
+public record SearchSettings (
         int maxDepth,
         long timeLimit,
-        int threads
+        int threads,
+        boolean pondering
 ) {
 }

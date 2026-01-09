@@ -2,15 +2,13 @@ package knight.clubbing;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
-import knight.clubbing.moveOrdering.MoveOrdering;
-import knight.clubbing.moveOrdering.OrderStrategy;
 import knight.clubbing.movegen.MoveGenerator;
-import knight.clubbing.revamp.search.Negamax;
-import knight.clubbing.revamp.search.SearchResponse;
-import knight.clubbing.revamp.search.SearchSettings;
-import knight.clubbing.search.IterativeDeepening;
-import knight.clubbing.search.SearchConfig;
-import knight.clubbing.search.SearchResult;
+import knight.clubbing.ordering.BasicMoveOrderer;
+import knight.clubbing.ordering.MoveOrderer;
+import knight.clubbing.ordering.MvvLvaFeature;
+import knight.clubbing.search.Negamax;
+import knight.clubbing.search.SearchResponse;
+import knight.clubbing.search.SearchSettings;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -36,7 +34,6 @@ public class UCI {
 
     private BBoard board;
     private Thread searchThread;
-    private IterativeDeepening iterativeDeepening;
     private Negamax negamax;
 
     protected BBoard getBoard() {
@@ -178,7 +175,7 @@ public class UCI {
                 } else {
                     moveTime = 60000; // 60 seconds default
                 }
-
+                System.out.println("mt: " + moveTime + " depth: " + depth);
                 SearchResponse response = negamax.search(board, new SearchSettings(depth, moveTime, 1, false));
                 //SearchResult result = iterativeDeepening.search(new SearchConfig(depth, moveTime, Runtime.getRuntime().availableProcessors() - 2));
                 //move = result.getBestMove();
@@ -199,7 +196,8 @@ public class UCI {
                     sendCommand("bestmove " + move);
                 } else {
                     BMove[] someMoves = new MoveGenerator(board).generateMoves(false);
-                    someMoves = MoveOrdering.orderMoves(board, someMoves, OrderStrategy.GENERAL);
+                    MoveOrderer moveOrderer = new BasicMoveOrderer(new MvvLvaFeature());
+                    moveOrderer.order(someMoves, board, null);
                     sendCommand("bestmove " + someMoves[0].getUci());
                 }
             }

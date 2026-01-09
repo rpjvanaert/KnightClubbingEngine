@@ -1,6 +1,7 @@
-package knight.clubbing.revamp.evaluation;
+package knight.clubbing.evaluation;
 
 import knight.clubbing.core.BBoard;
+import knight.clubbing.evaluation.MaterialFeature;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -1,4 +1,4 @@
-package knight.clubbing.revamp.ordering;
+package knight.clubbing.ordering;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
@@ -12,16 +12,34 @@ public class BasicMoveOrderer implements MoveOrderer {
     }
 
     @Override
-    public void order(BMove[] moves, BBoard board) {
+    public void order(BMove[] moves, BBoard board, MoveOrderingContext context) {
         int[] scores = new int[moves.length];
 
         for (int i = 0; i < moves.length; i++) {
             for (OrderFeature feature : features) {
                 scores[i] += feature.score(moves[i], board);
             }
+
+            if (context != null) {
+                BMove[][] killerMoves = context.getKillerMoves();
+                int ply = context.getPly();
+
+                if (killerMoves != null && ply >= 0) {
+                    if (moves[i].equals(killerMoves[ply][0])) {
+                        scores[i] += 10000;
+                    } else if (moves[i].equals(killerMoves[ply][1])) {
+                        scores[i] += 9000;
+                    } else if (moves[i].equals(killerMoves[ply][2])) {
+                        scores[i] += 8000;
+                    }
+                }
+            }
         }
 
-        // Sort moves by descending score
+        sortMovesByScore(moves, scores);
+    }
+
+    private void sortMovesByScore(BMove[] moves, int[] scores) {
         for (int i = 0; i < moves.length - 1; i++) {
             for (int j = i + 1; j < moves.length; j++) {
                 if (scores[j] > scores[i]) {

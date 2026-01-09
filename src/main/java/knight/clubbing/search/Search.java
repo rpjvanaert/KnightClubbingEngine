@@ -1,4 +1,4 @@
-package knight.clubbing.revamp.search;
+package knight.clubbing.search;
 
 import knight.clubbing.core.BBoard;
 

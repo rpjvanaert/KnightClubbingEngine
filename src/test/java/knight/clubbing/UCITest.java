@@ -47,8 +47,8 @@ class UCITest {
         String positionCommand = "position startpos moves e2e4 e7e5 g1f3 b8c6 d2d4 e5d4 f3d4 c6d4 d1d4 g8f6 e4e5 f6h5";
 
         uci.handlePosition(positionCommand);
-        uci.handleGo("go");
-        Thread.sleep(10000);
+        uci.handleGo("go wtime 300000 btime 300000 winc 0 binc 0");
+        Thread.sleep(11000);
     }
 
     @Tag("uci")
