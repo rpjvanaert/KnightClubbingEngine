@@ -124,14 +124,6 @@ public class UCI {
 
             }
         }
-
-        /*
-        logText("--------", BOARD_LOG);
-        logText(line, BOARD_LOG);
-        logText(board.exportFen(), BOARD_LOG);
-        logText(board.getDisplay(), BOARD_LOG);
-        logText("--------", BOARD_LOG);
-         */
     }
 
     protected void handleGo(String line) {
@@ -186,7 +178,10 @@ public class UCI {
                     stringBuilder.append("------\n");
                     String string = stringBuilder.toString();
                     log.println(string);
-                } catch (IOException e) {}
+                } catch (IOException e) {
+                    System.err.println("Failed to write engine crash log: " + e.getMessage());
+                    e.printStackTrace();
+                }
             } finally {
                 if (move != null && !move.isEmpty()) {
                     sendCommand("bestmove " + move);
