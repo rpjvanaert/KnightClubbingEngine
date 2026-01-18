@@ -29,7 +29,7 @@ public class Negamax implements Search {
     private final OpeningService openingService;
 
     private static final int MAX_DEPTH_KILLER = 32;
-    private final BMove[][] killerMoves = new BMove[MAX_DEPTH_KILLER][3];
+    private final BMove[][] killerMoves = new BMove[MAX_DEPTH_KILLER][2];
 
     public Negamax() {
         this.openingService = new OpeningService();
@@ -145,7 +145,6 @@ public class Negamax implements Search {
             alpha = Math.max(alpha, score);
             if (alpha >= beta) {
                 if (killerMoves[ply][0] == null || !killerMoves[ply][0].equals(move)) {
-                    killerMoves[ply][2] = killerMoves[ply][1];
                     killerMoves[ply][1] = killerMoves[ply][0];
                     killerMoves[ply][0] = move;
                 }

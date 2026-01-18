@@ -29,8 +29,6 @@ public class BasicMoveOrderer implements MoveOrderer {
                         scores[i] += 10000;
                     } else if (moves[i].equals(killerMoves[ply][1])) {
                         scores[i] += 9000;
-                    } else if (moves[i].equals(killerMoves[ply][2])) {
-                        scores[i] += 8000;
                     }
                 }
             }
