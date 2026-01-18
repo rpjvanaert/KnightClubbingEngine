@@ -67,12 +67,10 @@ public class UCI {
                 break;
             }
             case "stop": {
-                //if (searchStart != null) searchStart.stop();
                 if (searchThread != null) searchThread.interrupt();
                 break;
             }
             case "quit" : {
-                //if (searchStart != null) searchStart.stop();
                 if (searchThread != null) searchThread.interrupt();
                 System.exit(0);
                 break;
@@ -160,7 +158,6 @@ public class UCI {
                     break;
             }
         }
-        //iterativeDeepening = new IterativeDeepening(board);
         negamax = new Negamax(openingService);
 
         int time = whiteToMove ? wtime : btime;
@@ -177,10 +174,7 @@ public class UCI {
                 } else {
                     moveTime = 60000; // 60 seconds default
                 }
-                System.out.println("mt: " + moveTime + " depth: " + depth);
                 SearchResponse response = negamax.search(board, new SearchSettings(depth, moveTime, 1, false));
-                //SearchResult result = iterativeDeepening.search(new SearchConfig(depth, moveTime, Runtime.getRuntime().availableProcessors() - 2));
-                //move = result.getBestMove();
                 move = response.bestMove();
             } catch (Throwable t) {
                 t.printStackTrace();
@@ -198,9 +192,13 @@ public class UCI {
                     sendCommand("bestmove " + move);
                 } else {
                     BMove[] someMoves = new MoveGenerator(board).generateMoves(false);
-                    MoveOrderer moveOrderer = new BasicMoveOrderer(new MvvLvaFeature());
-                    moveOrderer.order(someMoves, board, null);
-                    sendCommand("bestmove " + someMoves[0].getUci());
+                    if (someMoves.length > 0) {
+                        MoveOrderer moveOrderer = new BasicMoveOrderer(new MvvLvaFeature());
+                        moveOrderer.order(someMoves, board, null);
+                        sendCommand("bestmove " + someMoves[0].getUci());
+                    } else {
+                        sendCommand("bestmove 0000");
+                    }
                 }
             }
         });
