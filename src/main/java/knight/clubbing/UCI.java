@@ -95,6 +95,7 @@ public class UCI {
         try (PrintWriter log = new PrintWriter(new FileWriter(location, true))) {
             log.println(text);
         } catch (IOException e) {
+            logger.warning("Failed to write log to '" + location + "': " + e.getMessage());
         }
     }
 
@@ -124,14 +125,6 @@ public class UCI {
 
             }
         }
-
-        /*
-        logText("--------", BOARD_LOG);
-        logText(line, BOARD_LOG);
-        logText(board.exportFen(), BOARD_LOG);
-        logText(board.getDisplay(), BOARD_LOG);
-        logText("--------", BOARD_LOG);
-         */
     }
 
     protected void handleGo(String line) {
@@ -186,7 +179,9 @@ public class UCI {
                     stringBuilder.append("------\n");
                     String string = stringBuilder.toString();
                     log.println(string);
-                } catch (IOException e) {}
+                } catch (IOException e) {
+                    logger.warning("Failed to write engine crash log: " + e.getMessage());
+                }
             } finally {
                 if (move != null && !move.isEmpty()) {
                     sendCommand("bestmove " + move);
