@@ -1,21 +1,19 @@
 package knight.clubbing.evaluation;
 
+import knight.clubbing.PieceValues;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BPiece;
 
 public class MaterialFeature implements EvalFeature {
 
-    private final int[] pieceValue;
+    private final PieceValues pieceValues;
 
     public MaterialFeature() {
-        pieceValue = new int[7];
-        pieceValue[BPiece.none] = 0;
-        pieceValue[BPiece.pawn] = 100;
-        pieceValue[BPiece.knight] = 310;
-        pieceValue[BPiece.bishop] = 330;
-        pieceValue[BPiece.rook] = 500;
-        pieceValue[BPiece.queen] = 950;
-        pieceValue[BPiece.king] = 0;
+        this(PieceValues.material());
+    }
+
+    public MaterialFeature(PieceValues pieceValues) {
+        this.pieceValues = pieceValues;
     }
 
     @Override
@@ -26,22 +24,22 @@ public class MaterialFeature implements EvalFeature {
         int wBishop = Long.bitCount(board.getBitboard(BPiece.whiteBishop));
         int wRook = Long.bitCount(board.getBitboard(BPiece.whiteRook));
         int wQueen = Long.bitCount(board.getBitboard(BPiece.whiteQueen));
-        int white = wPawn * pieceValue[BPiece.pawn] +
-                    wKnight * pieceValue[BPiece.knight] +
-                    wBishop * pieceValue[BPiece.bishop] +
-                    wRook * pieceValue[BPiece.rook] +
-                    wQueen * pieceValue[BPiece.queen];
+        int white = wPawn * pieceValues.value(BPiece.pawn) +
+                    wKnight * pieceValues.value(BPiece.knight) +
+                    wBishop * pieceValues.value(BPiece.bishop) +
+                    wRook * pieceValues.value(BPiece.rook) +
+                    wQueen * pieceValues.value(BPiece.queen);
 
         int bPawn = Long.bitCount(board.getBitboard(BPiece.blackPawn));
         int bKnight = Long.bitCount(board.getBitboard(BPiece.blackKnight));
         int bBishop = Long.bitCount(board.getBitboard(BPiece.blackBishop));
         int bRook = Long.bitCount(board.getBitboard(BPiece.blackRook));
         int bQueen = Long.bitCount(board.getBitboard(BPiece.blackQueen));
-        int black = bPawn * pieceValue[BPiece.pawn] +
-                    bKnight * pieceValue[BPiece.knight] +
-                    bBishop * pieceValue[BPiece.bishop] +
-                    bRook * pieceValue[BPiece.rook] +
-                    bQueen * pieceValue[BPiece.queen];
+        int black = bPawn * pieceValues.value(BPiece.pawn) +
+                    bKnight * pieceValues.value(BPiece.knight) +
+                    bBishop * pieceValues.value(BPiece.bishop) +
+                    bRook * pieceValues.value(BPiece.rook) +
+                    bQueen * pieceValues.value(BPiece.queen);
 
         return white - black;
     }
