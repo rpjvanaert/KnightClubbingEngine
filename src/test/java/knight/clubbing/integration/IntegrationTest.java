@@ -83,7 +83,7 @@ public class IntegrationTest {
     }
 
     @Test
-    void testisReady() {
+    void testIsReady() {
         // Input and wait
         startEngineWithInput("isready\n");
         waitForOutput("readyok", 5000);
