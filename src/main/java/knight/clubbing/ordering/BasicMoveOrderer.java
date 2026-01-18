@@ -59,6 +59,6 @@ public class BasicMoveOrderer implements MoveOrderer {
 
     @Override
     public String name() {
-        return "";
+        return "Basic Move Orderer";
     }
 }
