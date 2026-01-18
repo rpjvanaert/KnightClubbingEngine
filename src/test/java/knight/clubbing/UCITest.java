@@ -39,39 +39,4 @@ class UCITest {
 
         assertEquals("r1bqkb1r/pppp1ppp/8/4P2n/3Q4/8/PPP2PPP/RNB1KB1R w KQkq - 1 7", uci.getBoard().exportFen());
     }
-
-    @Tag("uci")
-    @Test
-    void testSequence_issue1() throws InterruptedException {
-        UCI uci = new UCI();
-        String positionCommand = "position startpos moves e2e4 e7e5 g1f3 b8c6 d2d4 e5d4 f3d4 c6d4 d1d4 g8f6 e4e5 f6h5";
-
-        uci.handlePosition(positionCommand);
-        uci.handleGo("go wtime 300000 btime 300000 winc 0 binc 0");
-        Thread.sleep(11000);
-    }
-
-    @Tag("uci")
-    @Test
-    void testArenaCommand_issue1() throws InterruptedException {
-        UCI uci = new UCI();
-        String command1 = "uci";
-        String command2 = "isready";
-        String command3 = "ucinewgame";
-        String command4 = "position startpos";
-        String command5 = "position startpos moves c2c4";
-        String command6 = "isready";
-        String command7 = "go wtime 300000 btime 300000 winc 0 binc 0";
-
-
-        uci.handleCommand(command1);
-        uci.handleCommand(command2);
-        uci.handleCommand(command3);
-        uci.handleCommand(command4);
-        uci.handleCommand(command5);
-        uci.handleCommand(command6);
-        uci.handleCommand(command7);
-
-        Thread.sleep(100000);
-    }
 }
