@@ -78,6 +78,7 @@ public class Negamax implements Search {
     private SearchResponse searchAtDepth(BBoard board, int depth) {
         String bestMove = null;
         int bestScore = -INF;
+        nodes = 0;
 
         int alpha = -INF;
         int beta = INF;
@@ -89,6 +90,7 @@ public class Negamax implements Search {
 
     private SearchResponse searchSingleThreaded(BBoard board, int depth, BMove[] nextMoves, int beta, int alpha, int bestScore) {
         String bestMove = null;
+        nodes++;
 
         orderer.order(nextMoves, board, new MoveOrderingContext(0, killerMoves));
 
@@ -107,10 +109,12 @@ public class Negamax implements Search {
             alpha = Math.max(alpha, score);
         }
 
-        return new SearchResponse(bestScore, bestMove, depth, 0, getTimeTakenMillis());
+        return new SearchResponse(bestScore, bestMove, depth, nodes, getTimeTakenMillis());
     }
 
     private int negamax(BBoard board, int depth, int alpha, int beta, int ply) {
+        nodes++;
+
         if (shouldStop()) {
             return 0;
         }
