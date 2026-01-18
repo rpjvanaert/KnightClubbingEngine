@@ -2,6 +2,7 @@ package knight.clubbing.opening;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
+import knight.clubbing.movegen.MoveGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -23,9 +25,8 @@ public class OpeningBookMaker {
     private static AtomicLong count = new AtomicLong(0);
 
     public static void main(String[] args) {
-        OpeningService openingService = new OpeningService(OpeningService.jdbcUrl);
-        logger.info("Starting OpeningBookMaker...");
-        logger.info("Current opening book size: {}", openingService.count());
+        OpeningService openingService = new OpeningService(OpeningService.jdbcUrl, OpeningServiceConfig.bookmakerConfig());
+        System.out.println("Starting OpeningBookMaker... initial size: " + openingService.count());
 
         try {
             Stockfish stockfish = new Stockfish();
@@ -35,16 +36,31 @@ public class OpeningBookMaker {
             logger.error("Error with Stockfish", e);
         }
 
-        try (ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())){
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        try {
             Iterable<String> pgns = streamPerPgn();
             total = StreamSupport.stream(pgns.spliterator(), false).count();
-            streamPerPgn().forEach(pgn -> executorService.submit(() -> processPgn(pgn, openingService)));
+            Iterable<String> pgnsForProcessing = streamPerPgn();
+            for (String pgn : pgnsForProcessing) {
+                executorService.submit(() -> processPgn(pgn, openingService));
+            }
+        } finally {
+            executorService.shutdown();
+            try {
+                if (!executorService.awaitTermination(1, TimeUnit.HOURS)) {
+                    logger.warn("Executor did not terminate in time; forcing shutdown");
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException ie) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
     private static Iterable<String> streamPerPgn() {
         try {
-            InputStream input = new FileInputStream("C:\\Users\\ralf\\Documents\\Repositories\\GitHub\\KnightClubbing\\KnightClubbingEngine\\src\\main\\resources\\lichess_db_standard_rated_2016-12.pgn");
+            InputStream input = new FileInputStream("/lichess_db_standard_rated_2016-12.pgn");
             return new PgnStreamer(input);
 
         } catch (IOException e) {
@@ -85,6 +101,8 @@ public class OpeningBookMaker {
                     continue;
 
                 OpeningBookEntry entry = stockfish.topMove("position fen " + board.exportFen(), board.state.getZobristKey(), STOCKFISH_DEPTH);
+                if (isIllegal(entry, board))
+                    return;
                 openingService.insert(entry);
 
                 if (prevZobristKey != null)
@@ -94,8 +112,17 @@ public class OpeningBookMaker {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
 
+    protected static boolean isIllegal(OpeningBookEntry entry, BBoard board) {
+        MoveGenerator moveGenerator = new MoveGenerator(board);
+        BMove[] moves = moveGenerator.generateMoves(false);
+        for (BMove move : moves) {
+            if (move.getUci().equals(entry.getMove()))
+                return false;
+        }
 
+        return true;
     }
 
     private static void insertOpeningBookEntries(OpeningService openingService, Stockfish stockfish, BBoard board) throws IOException {

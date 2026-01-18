@@ -39,3 +39,12 @@ build/
 
 ### Other ###
 stockfish/
+data/
+dependency-reduced-pom.xml
+/command.log
+/.idea/copilot.data.migration.agent.xml
+/.idea/copilot.data.migration.ask.xml
+/.idea/copilot.data.migration.ask2agent.xml
+/.idea/copilot.data.migration.edit.xml
+/src/main/resources/lichess_db_standard_rated_2016-12.pgn
+/.tool-versions

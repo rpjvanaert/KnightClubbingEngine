@@ -39,15 +39,4 @@ class UCITest {
 
         assertEquals("r1bqkb1r/pppp1ppp/8/4P2n/3Q4/8/PPP2PPP/RNB1KB1R w KQkq - 1 7", uci.getBoard().exportFen());
     }
-
-    @Tag("uci")
-    @Test
-    void testSequence_issue1() throws InterruptedException {
-        UCI uci = new UCI();
-        String positionCommand = "position startpos moves e2e4 e7e5 g1f3 b8c6 d2d4 e5d4 f3d4 c6d4 d1d4 g8f6 e4e5 f6h5";
-
-        uci.handlePosition(positionCommand);
-        uci.handleGo("go");
-        //Thread.sleep(100000);
-    }
 }

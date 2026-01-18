@@ -2,9 +2,14 @@ package knight.clubbing;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
-import knight.clubbing.search.NegaMaxStart;
-import knight.clubbing.search.singleThreaded.Search;
-import knight.clubbing.search.singleThreaded.SearchConfig;
+import knight.clubbing.movegen.MoveGenerator;
+import knight.clubbing.opening.OpeningService;
+import knight.clubbing.ordering.BasicMoveOrderer;
+import knight.clubbing.ordering.MoveOrderer;
+import knight.clubbing.ordering.MvvLvaFeature;
+import knight.clubbing.search.Negamax;
+import knight.clubbing.search.SearchResponse;
+import knight.clubbing.search.SearchSettings;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -30,7 +35,8 @@ public class UCI {
 
     private BBoard board;
     private Thread searchThread;
-    private NegaMaxStart searchStart;
+    private Negamax negamax;
+    private OpeningService openingService = new OpeningService();
 
     protected BBoard getBoard() {
         return board;
@@ -61,12 +67,10 @@ public class UCI {
                 break;
             }
             case "stop": {
-                if (searchStart != null) searchStart.stop();
                 if (searchThread != null) searchThread.interrupt();
                 break;
             }
             case "quit" : {
-                if (searchStart != null) searchStart.stop();
                 if (searchThread != null) searchThread.interrupt();
                 System.exit(0);
                 break;
@@ -90,7 +94,8 @@ public class UCI {
     private void logText(String text, String location) {
         try (PrintWriter log = new PrintWriter(new FileWriter(location, true))) {
             log.println(text);
-        } catch (IOException _) {
+        } catch (IOException e) {
+            logger.warning("Failed to write log to '" + location + "': " + e.getMessage());
         }
     }
 
@@ -120,36 +125,50 @@ public class UCI {
 
             }
         }
-
-        /*
-        logText("--------", BOARD_LOG);
-        logText(line, BOARD_LOG);
-        logText(board.exportFen(), BOARD_LOG);
-        logText(board.getDisplay(), BOARD_LOG);
-        logText("--------", BOARD_LOG);
-         */
     }
 
     protected void handleGo(String line) {
-        int depth = DEFAULT_DEPTH;
+        int wtime = -1, btime = -1, winc = 0, binc = 0, depthInput = -1;
+        boolean whiteToMove = board.isWhiteToMove;
 
-        if (line.contains("depth")) {
-            String[] parts = line.split(" ");
-            for (int i = 0; i < parts.length; i++) {
-                if (parts[i].equals("depth") && i + 1 < parts.length) {
-                    depth = Integer.parseInt(parts[i + 1]);
+        String[] parts = line.split(" ");
+        for (int i = 0; i < parts.length; i++) {
+            switch (parts[i]) {
+                case "wtime":
+                    if (i + 1 < parts.length) wtime = Integer.parseInt(parts[++i]);
                     break;
-                }
+                case "btime":
+                    if (i + 1 < parts.length) btime = Integer.parseInt(parts[++i]);
+                    break;
+                case "winc":
+                    if (i + 1 < parts.length) winc = Integer.parseInt(parts[++i]);
+                    break;
+                case "binc":
+                    if (i + 1 < parts.length) binc = Integer.parseInt(parts[++i]);
+                    break;
+                case "depth":
+                    if (i + 1 < parts.length) depthInput = Integer.parseInt(parts[++i]);
+                    break;
             }
         }
-        //searchStart = new NegaMaxStart(depth, executor);\
-        Search search = new Search(new SearchConfig(depth));
+        negamax = new Negamax(openingService);
+
+        int time = whiteToMove ? wtime : btime;
+        int inc = whiteToMove ? winc : binc;
+        int depth = depthInput > 0 ? depthInput : DEFAULT_DEPTH;
 
         searchThread = new Thread(() -> {
-            BMove move = null;
+            String move = "";
             try {
-                //move = searchStart.findBestMove(board);
-                move = search.search(board).move;
+                int moveTime;
+                if (time > 0) {
+                    moveTime = Math.min(time / 30 + inc, time / 2);
+                    moveTime = Math.max(10, Math.min(moveTime, time - 10));
+                } else {
+                    moveTime = 60000; // 60 seconds default
+                }
+                SearchResponse response = negamax.search(board, new SearchSettings(depth, moveTime, 1, false));
+                move = response.bestMove();
             } catch (Throwable t) {
                 t.printStackTrace();
                 try (PrintWriter log = new PrintWriter(new FileWriter("engine_crash.log", true))) {
@@ -160,12 +179,21 @@ public class UCI {
                     stringBuilder.append("------\n");
                     String string = stringBuilder.toString();
                     log.println(string);
-                } catch (IOException _) {}
+                } catch (IOException e) {
+                    logger.warning("Failed to write engine crash log: " + e.getMessage());
+                }
             } finally {
-                if (move != null) {
-                    sendCommand("bestmove " + move.getUci());
+                if (move != null && !move.isEmpty()) {
+                    sendCommand("bestmove " + move);
                 } else {
-                    sendCommand("bestmove 0000");
+                    BMove[] someMoves = new MoveGenerator(board).generateMoves(false);
+                    if (someMoves.length > 0) {
+                        MoveOrderer moveOrderer = new BasicMoveOrderer(new MvvLvaFeature());
+                        moveOrderer.order(someMoves, board, null);
+                        sendCommand("bestmove " + someMoves[0].getUci());
+                    } else {
+                        sendCommand("bestmove 0000");
+                    }
                 }
             }
         });
