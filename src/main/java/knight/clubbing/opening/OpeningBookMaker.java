@@ -25,9 +25,8 @@ public class OpeningBookMaker {
     private static AtomicLong count = new AtomicLong(0);
 
     public static void main(String[] args) {
-        OpeningService openingService = new OpeningService(OpeningService.jdbcUrl);
+        OpeningService openingService = new OpeningService(OpeningService.jdbcUrl, OpeningServiceConfig.bookmakerConfig());
         System.out.println("Starting OpeningBookMaker... initial size: " + openingService.count());
-        openingService.deleteAll();
 
         try {
             Stockfish stockfish = new Stockfish();

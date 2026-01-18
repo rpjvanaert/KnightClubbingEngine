@@ -37,6 +37,12 @@ public class Negamax implements Search {
         this.orderer = new BasicMoveOrderer(new MvvLvaFeature());
     }
 
+    public Negamax(OpeningService openingService) {
+        this.openingService = openingService;
+        this.evaluator = new CpuEvaluator();
+        this.orderer = new BasicMoveOrderer(new MvvLvaFeature());
+    }
+
     @Override
     public SearchResponse search(BBoard board, SearchSettings settings) {
         startTime = System.currentTimeMillis();
@@ -95,7 +101,7 @@ public class Negamax implements Search {
 
             if (score > bestScore) {
                 bestScore = score;
-                bestMove = move.toString();
+                bestMove = move.getUci();
             }
 
             alpha = Math.max(alpha, score);
@@ -121,18 +127,15 @@ public class Negamax implements Search {
 
         if (nextMoves.length == 0) {
             if (board.isInCheck())
-                return board.isWhiteToMove ? -MATE_SCORE + ply : MATE_SCORE - ply;
+                return -MATE_SCORE + ply;
             else
                 return 0;
         }
 
         for (BMove move : nextMoves) {
-            BBoard childBoard = board.copy();
-            childBoard.makeMove(move, true);
-
-            int score = -negamax(childBoard, depth - 1, -beta, -alpha, ply + 1);
-
-            childBoard.undoMove(move, true);
+            board.makeMove(move, true);
+            int score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
+            board.undoMove(move, true);
 
             if (score > bestScore) {
                 bestScore = score;
@@ -152,6 +155,7 @@ public class Negamax implements Search {
 
         return bestScore;
     }
+
 
     private boolean isDecisive(SearchResponse response) {
         return Math.abs(response.score()) >= MATE_SCORE - settings.maxDepth();
