@@ -4,7 +4,25 @@
 KnightClubbingEngine is a Java-based chess engine that uses KnightClubbingLogic for chess logic.
 
 # Setup
+## Prerequisites
+- Java 17 or higher installed
+- Maven installed
+- Github PAT in ```~/.m2/settings.xml``` for dependency access, should look like/contain this:
+```xml
+<settings>
+    <server>
+        <id>github</id>
+        <username>your-github-username</username>
+        <password>your-personal-access-token</password>
+    </server>
+</settings>
+```
 
+## Building
+To build the project, run:
+```shell
+mvn clean package
+```
 
 # Testing
 
@@ -14,7 +32,7 @@ KnightClubbingEngine is a Java-based chess engine that uses KnightClubbingLogic 
 - cutechess-cli installed
   - I downloaded the source code from Github and compiled it myself. Works for now.
 - Preferably 2 chess knightclubbingengine's in .jar format to test.
-  - Located in the ``test-sprt/engines`` directory.
+  - Paste them in the ``test-sprt/engines`` directory.
 
 ### Running
 To run the SPRT, run the test_sprt.sh in its directory, for example:
