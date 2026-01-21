@@ -18,6 +18,18 @@ KnightClubbingEngine is a Java-based chess engine that uses KnightClubbingLogic 
 </settings>
 ```
 
+## OpeningBookMaker
+To make use of this engine, you need to have an opening book running as postgres container.
+- Compose the container
+    - Compose the container in KnightClubbingLogic's resource folder named `kce-compose.yaml`.
+- Run OpeningBookMaker.java
+  - (`src/main/java/knight/clubbing/opening/OpeningBookMaker.java`)
+  - This will populate the opening book database based on the PGN file given using stockfish.
+    - PGN file at `src/main/resources/lichess_db_standard_rated_2016-12.pgn` hardcoded.
+    - Stockfish at `stockfish/stockfish` hardcoded.
+
+`Note: the engine and tests need the opening book database running (atm) to work.`
+
 ## Building
 To build the project, run:
 ```shell
