@@ -36,6 +36,93 @@ To build the project, run:
 mvn clean package
 ```
 
+# Usage
+
+UCI commands supported by this engine:
+
+- uci
+  - Engine announces id/author and replies "uciok".
+  - Example:
+    ```
+    uci
+    ```
+  - Expected output:
+    ```
+    id name KnightClubbing
+    id author Ralf van Aert
+    uciok
+    ```
+
+- isready
+  - Check engine readiness. Engine replies "readyok".
+  - Example:
+    ```
+    isready
+    ```
+  - Expected output:
+    ```
+    readyok
+    ```
+
+- position
+  - Set current board position. Supported forms:
+    - Start position:
+      ```
+      position startpos
+      ```
+    - Start position + moves:
+      ```
+      position startpos moves e2e4 e7e5 g1f3
+      ```
+    - FEN (with optional moves):
+      ```
+      position fen <FEN>
+      position fen <FEN> moves e2e4 ...
+      ```
+  - Moves must be UCI format (e2e4, g1f3, etc.).
+
+- go
+  - Start the search. Supported parameters:
+    - wtime <ms>  — white remaining time (ms)
+    - btime <ms>  — black remaining time (ms)
+    - winc <ms>   — white increment (ms)
+    - binc <ms>   — black increment (ms)
+    - depth <n>   — search depth
+  - The engine derives per-move time from wtime/btime and increments if provided; otherwise a default move time is used.
+  - Examples:
+    ```
+    go depth 8
+    go wtime 300000 btime 300000 winc 0 binc 0 depth 10
+    ```
+  - Note: other common UCI go parameters (movetime, nodes, mate, ponder, searchmoves, infinite) are not parsed by this engine.
+
+- stop
+  - Interrupts a running search. Engine should respond with a bestmove when interrupted.
+  - Example:
+    ```
+    stop
+    ```
+
+- quit
+  - Interrupts any running search and exits the process.
+  - Example:
+    ```
+    quit
+    ```
+
+- bestmove (engine output)
+  - After search completes or is interrupted, engine outputs:
+    ```
+    bestmove <uci>
+    ```
+    or, if no legal move:
+    ```
+    bestmove 0000
+    ```
+
+- setoption
+  - Not implemented: options are not exposed via UCI setoption at this time.
+
 # Testing
 
 ## SPRT usage
