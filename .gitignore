@@ -40,6 +40,8 @@ build/
 ### Other ###
 stockfish/
 data/
+*.jar
+/test-sprt/games.pgn
 dependency-reduced-pom.xml
 /command.log
 /.idea/copilot.data.migration.agent.xml

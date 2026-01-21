@@ -6,7 +6,7 @@
 
     <groupId>knight.clubbing</groupId>
     <artifactId>knightclubbingengine</artifactId>
-    <version>1.1</version>
+    <version>1.0.1</version>
 
     <distributionManagement>
         <repository>
