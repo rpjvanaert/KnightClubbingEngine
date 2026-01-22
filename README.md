@@ -30,6 +30,7 @@ KnightClubbingEngine is a Java-based UCI chess engine that uses KnightClubbingLo
     </server>
 </settings>
 ```
+If you don't want Github or PAT, you can also clone KnightClubbingLogic and install it in your local maven repository.
 
 ## OpeningBookMaker
 To make use of this engine, you need to have an opening book running as postgres container.
