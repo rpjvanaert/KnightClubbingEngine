@@ -1,4 +1,10 @@
-# KnightClubbingEngine
+<div style="background-color: #f0f8ff; color: #000; 
+            border-radius: 8px; padding: 20px; 
+            text-align: center; font-size: 36px; 
+            font-weight: bold; 
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);">
+    Knight Clubbing Engine
+</div>
 
 # About
 KnightClubbingEngine is a Java-based UCI chess engine that uses KnightClubbingLogic for chess logic.
