@@ -81,35 +81,19 @@ public class PstFeature implements EvalFeature {
 
     @Override
     public int compute(BBoard board) {
-        int scoreWhite = 0;
-        scoreWhite += getPstScore(board, BPiece.whitePawn);
-        scoreWhite += getPstScore(board, BPiece.whiteKnight);
-        scoreWhite += getPstScore(board, BPiece.whiteBishop);
-        scoreWhite += getPstScore(board, BPiece.whiteRook);
-        scoreWhite += getPstScore(board, BPiece.whiteQueen);
-        scoreWhite += getPstScore(board, BPiece.whiteKing);
 
-        int scoreBlack = 0;
-        scoreBlack += getPstScore(board, BPiece.blackPawn);
-        scoreBlack += getPstScore(board, BPiece.blackKnight);
-        scoreBlack += getPstScore(board, BPiece.blackBishop);
-        scoreBlack += getPstScore(board, BPiece.blackRook);
-        scoreBlack += getPstScore(board, BPiece.blackQueen);
-        scoreBlack += getPstScore(board, BPiece.blackKing);
-
-        return scoreWhite - scoreBlack;
-    }
-
-    protected static int getPstScore(BBoard board, int piece) {
         int score = 0;
-        long pieceBitboard = board.getBitboard(piece);
-        boolean isWhite = BPiece.isWhite(piece);
+        long pieceBitboard = board.getAllPiecesBoard();
+
         while (pieceBitboard != 0) {
-            int square = Long.numberOfTrailingZeros(pieceBitboard);
-            square = isWhite ? mirror(square) : square;
-            score += PST[BPiece.getPieceType(piece)][square];
+            int squareIndex = Long.numberOfTrailingZeros(pieceBitboard);
+            int piece = board.getPieceBoards()[squareIndex];
+            boolean isWhite = BPiece.isWhite(piece);
+            squareIndex = isWhite ? mirror(squareIndex) : squareIndex;
+            score += isWhite ? PST[BPiece.getPieceType(piece)][squareIndex]: -PST[BPiece.getPieceType(piece)][squareIndex];
             pieceBitboard &= pieceBitboard - 1;
         }
+
         return score;
     }
 
