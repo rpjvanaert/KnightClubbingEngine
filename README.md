@@ -1,7 +1,22 @@
 # KnightClubbingEngine
 
 # About
-KnightClubbingEngine is a Java-based chess engine that uses KnightClubbingLogic for chess logic.
+KnightClubbingEngine is a Java-based UCI chess engine that uses KnightClubbingLogic for chess logic.
+
+<!-- TOC -->
+* [KnightClubbingEngine](#knightclubbingengine)
+* [About](#about)
+* [Setup](#setup)
+  * [Prerequisites](#prerequisites)
+  * [OpeningBookMaker](#openingbookmaker)
+  * [Running](#running)
+* [Testing](#testing)
+  * [SPRT usage](#sprt-usage)
+    * [Setup](#setup-1)
+    * [Running](#running-1)
+    * [Script details](#script-details)
+* [UCI overview](#uci-overview)
+<!-- TOC -->
 
 # Setup
 ## Prerequisites
