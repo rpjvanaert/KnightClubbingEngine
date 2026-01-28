@@ -1,82 +1,39 @@
 package knight.clubbing.evaluation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BPiece;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Map;
+
 public class PstFeature implements EvalFeature {
 
-    private static final int[][] PST = initializePst();
+    private static final int[][] PST = initializePst("eval_config/pst.json");
 
-    private static int[][] initializePst() {
-        int[][] pst = new int[7][64];
+    private static int[][] initializePst(String fileLocation) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            ClassLoader loader = PstFeature.class.getClassLoader();
+            Map<String, Object> pstConfig = mapper.readValue(loader.getResource(fileLocation), Map.class);
 
-        pst[BPiece.pawn] = new int[] {
-                0,  0,  0,  0,  0,  0,  0,  0,
-                50, 50, 50, 50, 50, 50, 50, 50,
-                10, 10, 20, 30, 30, 20, 10, 10,
-                5,  5, 10, 25, 25, 10,  5,  5,
-                0,  0,  0, 20, 20,  0,  0,  0,
-                5, -5,-10,  0,  0,-10, -5,  5,
-                5, 10, 10,-20,-20, 10, 10,  5,
-                0,  0,  0,  0,  0,  0,  0,  0
-        };
+            int[][] pst = new int[7][64];
+            pst[BPiece.pawn] = convertToIntArray((ArrayList<?>) pstConfig.get("pawn"));
+            pst[BPiece.knight] = convertToIntArray((ArrayList<?>) pstConfig.get("knight"));
+            pst[BPiece.bishop] = convertToIntArray((ArrayList<?>) pstConfig.get("bishop"));
+            pst[BPiece.rook] = convertToIntArray((ArrayList<?>) pstConfig.get("rook"));
+            pst[BPiece.queen] = convertToIntArray((ArrayList<?>) pstConfig.get("queen"));
+            pst[BPiece.king] = convertToIntArray((ArrayList<?>) pstConfig.get("king"));
 
-        pst[BPiece.knight] = new int[] {
-                -50,-40,-30,-30,-30,-30,-40,-50,
-                -40,-20,  0,  0,  0,  0,-20,-40,
-                -30,  0, 10, 15, 15, 10,  0,-30,
-                -30,  5, 15, 20, 20, 15,  5,-30,
-                -30,  0, 15, 20, 20, 15,  0,-30,
-                -30,  5, 10, 15, 15, 10,  5,-30,
-                -40,-20,  0,  5,  5,  0,-20,-40,
-                -50,-40,-30,-30,-30,-30,-40,-50
-        };
+            return pst;
+        } catch (IOException | NullPointerException e) {
+            throw new RuntimeException("Failed to load PST configuration", e);
+        }
+    }
 
-        pst[BPiece.bishop] = new int[] {
-                -20,-10,-10,-10,-10,-10,-10,-20,
-                -10,  0,  0,  0,  0,  0,  0,-10,
-                -10,  0,  5, 10, 10,  5,  0,-10,
-                -10,  5,  5, 10, 10,  5,  5,-10,
-                -10,  0, 10, 10, 10, 10,  0,-10,
-                -10, 10, 10, 10, 10, 10, 10,-10,
-                -10, 15,  0,  0,  0,  0, 15,-10,
-                -20,-10,-10,-10,-10,-10,-10,-20
-        };
-
-        pst[BPiece.rook] = new int[] {
-                0,  0,  0,  0,  0,  0,  0,  0,
-                5, 10, 10, 10, 10, 10, 10,  5,
-                -5, 0, 0, 0, 0, 0, 0, -5,
-                -5, 0, 0, 0, 0, 0, 0, -5,
-                -5, 0, 0, 0, 0, 0, 0, -5,
-                -5, 0, 0, 0, 0, 0, 0, -5,
-                -5, 0, 0, 0, 0, 0, 0, -5,
-                0,  0,  0,  5,  5,  0,  0,  0
-        };
-
-        pst[BPiece.queen] = new int[] {
-                -20,-10,-10, -5, -5,-10,-10,-20,
-                -10,  0,  0,  0,  0,  0,  0,-10,
-                -10,  0,  5,  5,  5,  5,  0,-10,
-                 -5,  0,  5,  5,  5,  5,  0, -5,
-                  0,  0,  5,  5,  5,  5,  0, -5,
-                -10,  5,  5,  5,  5,  5,  0,-10,
-                -10,  0,  5,  0,  0,  0,  0,-10,
-                -20,-10,-10, -5, -5,-10,-10,-20
-        };
-
-        pst[BPiece.king] = new int[] {
-                -30,-40,-40,-50,-50,-40,-40,-30,
-                -30,-40,-40,-50,-50,-40,-40,-30,
-                -30,-40,-40,-50,-50,-40,-40,-30,
-                -30,-40,-40,-50,-50,-40,-40,-30,
-                -20,-30,-30,-40,-40,-30,-30,-20,
-                -10,-20,-20,-20,-20,-20,-20,-10,
-                 20, 20,  0,  0,  0,  0, 20, 20,
-                 20, 30, 10,  0,  0, 10, 30, 20
-        };
-
-        return pst;
+    private static int[] convertToIntArray(ArrayList<?> list) {
+        return list.stream().mapToInt(o -> (int) o).toArray();
     }
 
     @Override

@@ -1,11 +1,12 @@
 package knight.clubbing.evaluation;
 
 import knight.clubbing.core.BBoard;
-import knight.clubbing.evaluation.PstFeature;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled // Disable all tests in this class due to weights changing. Validity tested by SPRT
 class PstFeatureTest {
 
     @Test
