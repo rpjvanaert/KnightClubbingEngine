@@ -136,6 +136,10 @@ public class Negamax implements Search {
                 return 0;
         }
 
+        if (board.isDrawByRepetition()) {
+            return 0;
+        }
+
         for (BMove move : nextMoves) {
             board.makeMove(move, true);
             int score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
