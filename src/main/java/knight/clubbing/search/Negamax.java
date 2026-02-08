@@ -53,7 +53,7 @@ public class Negamax implements Search {
         startTime = System.currentTimeMillis();
         timeLimit = settings.timeLimit();
 
-        if (openingService.exists(board.state.getZobristKey())) {
+        if (openingService.exists(board.state.getZobristKey()) && false) {
             OpeningBookEntry entry = openingService.getBest(board.state.getZobristKey());
             return new SearchResponse(entry.getScore(), entry.getMove(), 0, 0, getTimeTakenMillis());
         }
@@ -81,7 +81,6 @@ public class Negamax implements Search {
     }
 
     private SearchResponse searchAtDepth(BBoard board, int depth) {
-        String bestMove = null;
         int bestScore = -INF;
         nodes = 0;
 
@@ -120,8 +119,8 @@ public class Negamax implements Search {
     private int negamax(BBoard board, int depth, int alpha, int beta, int ply) {
         nodes++;
 
-        if (transpositionTable.containsKey(board.state.getZobristKey())) {
-            TranspositionEntry entry = transpositionTable.get(board.state.getZobristKey());
+        if (containsTransposition(board)) {
+            TranspositionEntry entry = getEntry(board);
             if (entry.getDepth() > depth) {
                 if (entry.getFlag() == 0) return entry.getScore();
                 if (entry.getFlag() == 1 && entry.getScore() <= alpha) return entry.getScore();
@@ -173,6 +172,14 @@ public class Negamax implements Search {
         transpositionTable.put(board.state.getZobristKey(), new TranspositionEntry(depth, bestScore, flag));
 
         return bestScore;
+    }
+
+    private boolean containsTransposition(BBoard board) {
+        return transpositionTable.containsKey(board.state.getZobristKey());
+    }
+
+    private TranspositionEntry getEntry(BBoard board) {
+        return transpositionTable.get(board.state.getZobristKey());
     }
 
     private static int determineFlag(int beta, int bestScore, int originalAlpha) {
