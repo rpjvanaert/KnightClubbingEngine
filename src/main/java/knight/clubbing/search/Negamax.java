@@ -12,6 +12,9 @@ import knight.clubbing.ordering.MoveOrderer;
 import knight.clubbing.ordering.MoveOrderingContext;
 import knight.clubbing.ordering.MvvLvaFeature;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static knight.clubbing.search.EngineConst.INF;
 import static knight.clubbing.search.EngineConst.MATE_SCORE;
 
@@ -30,6 +33,8 @@ public class Negamax implements Search {
 
     private static final int MAX_DEPTH_KILLER = 32;
     private final BMove[][] killerMoves = new BMove[MAX_DEPTH_KILLER][2];
+
+    private final Map<Long, TranspositionEntry> transpositionTable = new HashMap<>();
 
     public Negamax() {
         this.openingService = new OpeningService();
@@ -115,15 +120,20 @@ public class Negamax implements Search {
     private int negamax(BBoard board, int depth, int alpha, int beta, int ply) {
         nodes++;
 
-        if (shouldStop()) {
-            return 0;
+        if (transpositionTable.containsKey(board.state.getZobristKey())) {
+            TranspositionEntry entry = transpositionTable.get(board.state.getZobristKey());
+            if (entry.getDepth() > depth) {
+                if (entry.getFlag() == 0) return entry.getScore();
+                if (entry.getFlag() == 1 && entry.getScore() <= alpha) return entry.getScore();
+                if (entry.getFlag() == 2 && entry.getScore() >= beta) return entry.getScore();
+            }
         }
 
-        if (depth <= 0)
-            return evaluator.evaluate(board);
+        if (shouldStop()) return 0;
+        if (depth <= 0) return evaluator.evaluate(board);
 
         int bestScore = -INF;
-        BMove bestMove = null;
+        int originalAlpha = alpha;
 
         BMove[] nextMoves = new MoveGenerator(board).generateMoves(false);
 
@@ -147,7 +157,6 @@ public class Negamax implements Search {
 
             if (score > bestScore) {
                 bestScore = score;
-                bestMove = move;
             }
 
             alpha = Math.max(alpha, score);
@@ -160,7 +169,16 @@ public class Negamax implements Search {
             }
         }
 
+        int flag = determineFlag(beta, bestScore, originalAlpha);
+        transpositionTable.put(board.state.getZobristKey(), new TranspositionEntry(depth, bestScore, flag));
+
         return bestScore;
+    }
+
+    private static int determineFlag(int beta, int bestScore, int originalAlpha) {
+        if (bestScore <= originalAlpha) return 1;
+        if (bestScore >= beta) return 2;
+        return 0;
     }
 
 
