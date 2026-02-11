@@ -22,4 +22,10 @@ public class TranspositionEntry {
     public int getFlag() {
         return flag;
     }
+
+    public static int determineFlag(int beta, int bestScore, int originalAlpha) {
+        if (bestScore <= originalAlpha) return 1;
+        if (bestScore >= beta) return 2;
+        return 0;
+    }
 }

@@ -168,8 +168,7 @@ public class Negamax implements Search {
             }
         }
 
-        int flag = determineFlag(beta, bestScore, originalAlpha);
-        transpositionTable.put(board.state.getZobristKey(), new TranspositionEntry(depth, bestScore, flag));
+        transpositionTable.put(board.state.getZobristKey(), new TranspositionEntry(depth, bestScore, TranspositionEntry.determineFlag(beta, bestScore, originalAlpha)));
 
         return bestScore;
     }
@@ -181,13 +180,6 @@ public class Negamax implements Search {
     private TranspositionEntry getEntry(BBoard board) {
         return transpositionTable.get(board.state.getZobristKey());
     }
-
-    private static int determineFlag(int beta, int bestScore, int originalAlpha) {
-        if (bestScore <= originalAlpha) return 1;
-        if (bestScore >= beta) return 2;
-        return 0;
-    }
-
 
     private boolean isDecisive(SearchResponse response) {
         return Math.abs(response.score()) >= MATE_SCORE - settings.maxDepth();
