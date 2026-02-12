@@ -188,7 +188,7 @@ public class UCI {
                 } else {
                     BMove[] someMoves = new MoveGenerator(board).generateMoves(false);
                     if (someMoves.length > 0) {
-                        MoveOrderer moveOrderer = new BasicMoveOrderer(new MvvLvaFeature());
+                        MoveOrderer moveOrderer = new BasicMoveOrderer();
                         moveOrderer.order(someMoves, board, null);
                         sendCommand("bestmove " + someMoves[0].getUci());
                     } else {

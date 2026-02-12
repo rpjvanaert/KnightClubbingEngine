@@ -7,10 +7,7 @@ import knight.clubbing.opening.OpeningBookEntry;
 import knight.clubbing.opening.OpeningService;
 import knight.clubbing.evaluation.CpuEvaluator;
 import knight.clubbing.evaluation.Evaluator;
-import knight.clubbing.ordering.BasicMoveOrderer;
-import knight.clubbing.ordering.MoveOrderer;
-import knight.clubbing.ordering.MoveOrderingContext;
-import knight.clubbing.ordering.MvvLvaFeature;
+import knight.clubbing.ordering.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,13 +36,13 @@ public class Negamax implements Search {
     public Negamax() {
         this.openingService = new OpeningService();
         this.evaluator = new CpuEvaluator();
-        this.orderer = new BasicMoveOrderer(new MvvLvaFeature());
+        this.orderer = new DefaultMoveOrderer();
     }
 
     public Negamax(OpeningService openingService) {
         this.openingService = openingService;
         this.evaluator = new CpuEvaluator();
-        this.orderer = new BasicMoveOrderer(new MvvLvaFeature());
+        this.orderer = new DefaultMoveOrderer();
     }
 
     @Override

@@ -152,8 +152,8 @@ class BasicMoveOrdererTest {
     }
 
     @Test
-    void testOrderMovesWithNoFeatures() {
-        BasicMoveOrderer orderer = new BasicMoveOrderer();
+    void testOrderMovesWithNullFeatures() {
+        BasicMoveOrderer orderer = new BasicMoveOrderer(new NullFeature());
         BMove[] moves = {move1, move2, move3};
 
         orderer.order(moves, mockBoard, null);

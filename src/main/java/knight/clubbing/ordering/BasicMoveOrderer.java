@@ -7,6 +7,13 @@ public class BasicMoveOrderer implements MoveOrderer {
 
     private final OrderFeature[] features;
 
+    public BasicMoveOrderer() {
+        this.features = new OrderFeature[] {
+            new MvvLvaFeature(),
+            new CenterFeature()
+        };
+    }
+
     public BasicMoveOrderer(OrderFeature... features) {
         this.features = features;
     }
