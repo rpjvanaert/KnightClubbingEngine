@@ -34,8 +34,19 @@ public class DefaultMoveOrderer implements MoveOrderer {
         score += victimValue - aggressorValue;
 
         // Center
-        if ((rank == 3 || rank == 4) && (file == 3 || file == 4)) {
+        if ((rank == 3 || rank == 4) && (file == 3 || file == 4))
             score += 50;
+
+        // Piece activity & specifics
+        switch(BPiece.getPieceType(aggressorPiece)) {
+            case BPiece.pawn, BPiece.knight, BPiece.bishop:
+                score += 10;
+                break;
+            case BPiece.king:
+                score -= 20;
+                break;
+            default:
+                break;
         }
 
         // Killer moves
