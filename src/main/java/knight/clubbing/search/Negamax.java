@@ -3,8 +3,6 @@ package knight.clubbing.search;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.movegen.MoveGenerator;
-import knight.clubbing.opening.OpeningBookEntry;
-import knight.clubbing.opening.OpeningService;
 import knight.clubbing.evaluation.CpuEvaluator;
 import knight.clubbing.evaluation.Evaluator;
 import knight.clubbing.ordering.*;
@@ -24,9 +22,7 @@ public class Negamax implements Search {
     private SearchSettings settings;
 
     private final Evaluator evaluator;
-    private final MoveOrderer orderer;
-
-    private final OpeningService openingService;
+    private final DefaultMoveOrderer orderer;
 
     private static final int MAX_DEPTH_KILLER = 32;
     private final BMove[][] killerMoves = new BMove[MAX_DEPTH_KILLER][2];
@@ -34,13 +30,6 @@ public class Negamax implements Search {
     private final Map<Long, TranspositionEntry> transpositionTable = new HashMap<>();
 
     public Negamax() {
-        this.openingService = new OpeningService();
-        this.evaluator = new CpuEvaluator();
-        this.orderer = new DefaultMoveOrderer();
-    }
-
-    public Negamax(OpeningService openingService) {
-        this.openingService = openingService;
         this.evaluator = new CpuEvaluator();
         this.orderer = new DefaultMoveOrderer();
     }
@@ -49,11 +38,6 @@ public class Negamax implements Search {
     public SearchResponse search(BBoard board, SearchSettings settings) {
         startTime = System.currentTimeMillis();
         timeLimit = settings.timeLimit();
-
-        if (openingService.exists(board.state.getZobristKey()) && false) {
-            OpeningBookEntry entry = openingService.getBest(board.state.getZobristKey());
-            return new SearchResponse(entry.getScore(), entry.getMove(), 0, 0, getTimeTakenMillis());
-        }
 
         this.settings = settings;
         this.stop = false;
@@ -129,6 +113,7 @@ public class Negamax implements Search {
         if (depth <= 0) return evaluator.evaluate(board);
 
         int bestScore = -INF;
+        BMove bestMove = null;
         int originalAlpha = alpha;
 
         BMove[] nextMoves = new MoveGenerator(board).generateMoves(false);
@@ -147,23 +132,32 @@ public class Negamax implements Search {
         }
 
         for (BMove move : nextMoves) {
+            boolean isCapture = board.getPieceBoards()[move.targetSquare()] != 0;
+
             board.makeMove(move, true);
             int score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
             board.undoMove(move, true);
 
             if (score > bestScore) {
                 bestScore = score;
+                bestMove = move;
             }
 
             alpha = Math.max(alpha, score);
             if (alpha >= beta) {
+                orderer.updateHistory(move, depth, board.isWhiteToMove, isCapture);
+
                 if (killerMoves[ply][0] == null || !killerMoves[ply][0].equals(move)) {
                     killerMoves[ply][1] = killerMoves[ply][0];
                     killerMoves[ply][0] = move;
                 }
                 break;
+            } else {
+                orderer.penalizeHistory(move, depth, board.isWhiteToMove, isCapture);
             }
         }
+
+
 
         transpositionTable.put(board.state.getZobristKey(), new TranspositionEntry(depth, bestScore, TranspositionEntry.determineFlag(beta, bestScore, originalAlpha)));
 

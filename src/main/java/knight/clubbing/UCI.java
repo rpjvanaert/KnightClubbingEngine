@@ -3,7 +3,6 @@ package knight.clubbing;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.movegen.MoveGenerator;
-import knight.clubbing.opening.OpeningService;
 import knight.clubbing.ordering.BasicMoveOrderer;
 import knight.clubbing.ordering.MoveOrderer;
 import knight.clubbing.ordering.MvvLvaFeature;
@@ -36,7 +35,6 @@ public class UCI {
     private BBoard board;
     private Thread searchThread;
     private Negamax negamax;
-    private OpeningService openingService = new OpeningService();
 
     protected BBoard getBoard() {
         return board;
@@ -151,7 +149,7 @@ public class UCI {
                     break;
             }
         }
-        negamax = new Negamax(openingService);
+        negamax = new Negamax();
 
         int time = whiteToMove ? wtime : btime;
         int inc = whiteToMove ? winc : binc;
