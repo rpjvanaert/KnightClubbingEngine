@@ -145,7 +145,7 @@ public class Negamax implements Search {
 
             alpha = Math.max(alpha, score);
             if (alpha >= beta) {
-                orderer.updateHistory(move, depth, board.isWhiteToMove, isCapture);
+                orderer.updateHistory(move, depth, board.isWhiteToMove(), isCapture);
 
                 if (killerMoves[ply][0] == null || !killerMoves[ply][0].equals(move)) {
                     killerMoves[ply][1] = killerMoves[ply][0];

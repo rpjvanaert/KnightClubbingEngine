@@ -6,6 +6,12 @@ import knight.clubbing.core.BMove;
 import knight.clubbing.core.BPiece;
 
 public class DefaultMoveOrderer implements MoveOrderer {
+
+    private final int[][][] historyTable = new int[2][64][64];
+    private static final int HISTORY_BONUS = 8;
+    private static final int MAX_HISTORY_SCORE = 100_000;
+    private static final int HISTORY_SCALE = 5_000;
+
     @Override
     public void order(BMove[] moves, BBoard board, MoveOrderingContext context) {
         int[] scores = new int[moves.length];
@@ -32,6 +38,9 @@ public class DefaultMoveOrderer implements MoveOrderer {
         int aggressorValue = PieceValues.MVVLVA_VALUES[BPiece.getPieceType(aggressorPiece)];
 
         score += victimValue - aggressorValue;
+
+        // History heuristic
+        score += historyTable[board.isWhiteToMove() ? 0 : 1][move.startSquare()][move.targetSquare()] / HISTORY_SCALE;
 
         // Center
         if ((rank == 3 || rank == 4) && (file == 3 || file == 4))
@@ -81,6 +90,48 @@ public class DefaultMoveOrderer implements MoveOrderer {
                 }
             }
         }
+    }
+
+    public void updateHistory2(BMove move, int depth, boolean isWhite, boolean isCapture) {
+        if (isCapture) return;
+
+        int color = isWhite ? 0 : 1;
+        int bonus = depth * depth * HISTORY_BONUS;
+
+        int clampedBonus = Math.max(-MAX_HISTORY_SCORE, Math.min(MAX_HISTORY_SCORE, bonus));
+        int current = historyTable[color][move.startSquare()][move.targetSquare()];
+
+        historyTable[color][move.startSquare()][move.targetSquare()] =
+                current + clampedBonus - current * Math.abs(clampedBonus) / MAX_HISTORY_SCORE;
+    }
+
+    public void updateHistory(BMove move, int depth, boolean isWhite, boolean isCapture) {
+        if (isCapture) return;
+
+        int color = isWhite ? 0 : 1;
+        int bonus = depth * depth;
+        historyTable[color][move.startSquare()][move.targetSquare()] += bonus;
+    }
+
+    public void penalizeHistory(BMove move, int depth, boolean isWhite, boolean isCapture) {
+        if (isCapture) return;
+
+        int color = isWhite ? 0 : 1;
+        int penalty = depth;
+        historyTable[color][move.startSquare()][move.targetSquare()] -= penalty;
+    }
+
+    public void penalizeHistory2(BMove move, int depth, boolean isWhite, boolean isCapture) {
+        if (isCapture) return;
+
+        int color = isWhite ? 0 : 1;
+        int penalty = depth * HISTORY_BONUS;
+        int clampedPenalty = Math.max(-MAX_HISTORY_SCORE, Math.min(MAX_HISTORY_SCORE, penalty));
+        int negClamped = -clampedPenalty;
+
+        int current = historyTable[color][move.startSquare()][move.targetSquare()];
+        historyTable[color][move.startSquare()][move.targetSquare()] =
+                current + negClamped - current * Math.abs(negClamped) / MAX_HISTORY_SCORE;
     }
 
     @Override
