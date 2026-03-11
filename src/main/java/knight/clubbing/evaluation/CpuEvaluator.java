@@ -25,7 +25,7 @@ public class CpuEvaluator implements Evaluator {
             score += feature.compute(board);
         }
 
-        return board.isWhiteToMove ? score : -score;
+        return board.isWhiteToMove() ? score : -score;
     }
 
     @Override

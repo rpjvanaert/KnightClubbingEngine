@@ -127,7 +127,7 @@ public class UCI {
 
     protected void handleGo(String line) {
         int wtime = -1, btime = -1, winc = 0, binc = 0, depthInput = -1;
-        boolean whiteToMove = board.isWhiteToMove;
+        boolean whiteToMove = board.isWhiteToMove();
 
         String[] parts = line.split(" ");
         for (int i = 0; i < parts.length; i++) {

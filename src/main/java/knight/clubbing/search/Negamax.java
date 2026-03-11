@@ -153,23 +153,23 @@ public class Negamax implements Search {
                 }
                 break;
             } else {
-                orderer.penalizeHistory(move, depth, board.isWhiteToMove, isCapture);
+                orderer.penalizeHistory(move, depth, board.isWhiteToMove(), isCapture);
             }
         }
 
 
 
-        transpositionTable.put(board.state.getZobristKey(), new TranspositionEntry(depth, bestScore, TranspositionEntry.determineFlag(beta, bestScore, originalAlpha)));
+        transpositionTable.put(board.getState().getZobristKey(), new TranspositionEntry(depth, bestScore, TranspositionEntry.determineFlag(beta, bestScore, originalAlpha)));
 
         return bestScore;
     }
 
     private boolean containsTransposition(BBoard board) {
-        return transpositionTable.containsKey(board.state.getZobristKey());
+        return transpositionTable.containsKey(board.getState().getZobristKey());
     }
 
     private TranspositionEntry getEntry(BBoard board) {
-        return transpositionTable.get(board.state.getZobristKey());
+        return transpositionTable.get(board.getState().getZobristKey());
     }
 
     private boolean isDecisive(SearchResponse response) {
