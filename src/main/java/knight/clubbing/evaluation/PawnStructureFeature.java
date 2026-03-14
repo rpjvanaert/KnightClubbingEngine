@@ -1,7 +1,9 @@
 package knight.clubbing.evaluation;
 
 import knight.clubbing.core.BBoard;
+import knight.clubbing.core.BBoardHelper;
 import knight.clubbing.core.BPiece;
+import knight.clubbing.core.PopLsbResult;
 
 public class PawnStructureFeature implements EvalFeature {
 
@@ -18,7 +20,6 @@ public class PawnStructureFeature implements EvalFeature {
         this(PawnHashTable.getInstance());
     }
 
-    // Constructor for testing with custom hash table
     public PawnStructureFeature(PawnHashTable hashTable) {
         this.hashTable = hashTable;
     }
@@ -44,7 +45,6 @@ public class PawnStructureFeature implements EvalFeature {
         long whitePawns = board.getBitboard(BPiece.whitePawn);
         long blackPawns = board.getBitboard(BPiece.blackPawn);
 
-        // Simple hash - for better results, use Zobrist hashing
         return whitePawns ^ (blackPawns * 31);
     }
 
@@ -117,9 +117,10 @@ public class PawnStructureFeature implements EvalFeature {
         // White passed pawns
         long tempWhitePawns = whitePawns;
         while (tempWhitePawns != 0) {
-            int square = Long.numberOfTrailingZeros(tempWhitePawns);
-            int file = square & 7;
-            int rank = square >>> 3;
+            PopLsbResult result = PopLsbResult.popLsb(tempWhitePawns);
+            int square = result.index;
+            int file = BBoardHelper.fileIndex(square);
+            int rank = BBoardHelper.rankIndex(square);
 
             long frontMask = 0L;
             for (int r = rank + 1; r < 8; r++) {
@@ -132,15 +133,16 @@ public class PawnStructureFeature implements EvalFeature {
                 score += PASSED_PAWN_BONUS[rank];
             }
 
-            tempWhitePawns &= tempWhitePawns - 1;
+            tempWhitePawns = result.remaining;
         }
 
         // Black passed pawns
         long tempBlackPawns = blackPawns;
         while (tempBlackPawns != 0) {
-            int square = Long.numberOfTrailingZeros(tempBlackPawns);
-            int file = square & 7;
-            int rank = square >>> 3;
+            PopLsbResult result = PopLsbResult.popLsb(tempBlackPawns);
+            int square = result.index;
+            int file = BBoardHelper.fileIndex(square);
+            int rank = BBoardHelper.rankIndex(square);
 
             long frontMask = 0L;
             for (int r = rank - 1; r >= 0; r--) {
@@ -153,7 +155,7 @@ public class PawnStructureFeature implements EvalFeature {
                 score -= PASSED_PAWN_BONUS[7 - rank];
             }
 
-            tempBlackPawns &= tempBlackPawns - 1;
+            tempBlackPawns = result.remaining;
         }
 
         return score;
@@ -165,42 +167,44 @@ public class PawnStructureFeature implements EvalFeature {
         // White pawn chains
         long tempWhitePawns = whitePawns;
         while (tempWhitePawns != 0) {
-            if (isProtected(tempWhitePawns, whitePawns)) {
+            PopLsbResult result = PopLsbResult.popLsb(tempWhitePawns);
+            if (isProtected(result.index, whitePawns, true)) {
                 score += PAWN_CHAIN_BONUS;
             }
-            tempWhitePawns &= tempWhitePawns - 1;
+            tempWhitePawns =  result.remaining;
         }
 
         // Black pawn chains
         long tempBlackPawns = blackPawns;
         while (tempBlackPawns != 0) {
-            if (isProtected(tempBlackPawns, blackPawns)) {
+            PopLsbResult result = PopLsbResult.popLsb(tempBlackPawns);
+            if (isProtected(result.index, blackPawns, false)) {
                 score -= PAWN_CHAIN_BONUS;
             }
-            tempBlackPawns &= tempBlackPawns - 1;
+            tempBlackPawns = result.remaining;
         }
 
         return score;
     }
 
-    private static boolean isProtected(long pawnBitboard, long allPawns) {
-        int square = Long.numberOfTrailingZeros(pawnBitboard);
-        int file = square & 7;
-        int rank = square >>> 3;
+    private static boolean isProtected(int square, long allPawns, boolean isWhite) {
+        int file = BBoardHelper.fileIndex(square);
+        int rank = BBoardHelper.rankIndex(square);
 
-        if (rank < 7) {
-            if (file > 0) {
-                int leftDiagonal = (rank + 1) * 8 + (file - 1);
-                if ((allPawns & (1L << leftDiagonal)) != 0) {
-                    return true;
-                }
-            }
-            if (file < 7) {
-                int rightDiagonal = (rank + 1) * 8 + (file + 1);
-                if ((allPawns & (1L << rightDiagonal)) != 0) {
-                    return true;
-                }
-            }
+        int protectorRank = rank + (isWhite ? -1 : 1);
+
+        if (protectorRank < 0 || protectorRank > 7)
+            return false;
+
+        if (file > 0) {
+            int leftDiagonal = (rank + (isWhite ? -1 : 1)) * 8 + (file - 1);
+            if ((allPawns & (1L << leftDiagonal)) != 0)
+                return true;
+        }
+        if (file < 7) {
+            int rightDiagonal = (rank + (isWhite ? -1 : 1)) * 8 + (file + 1);
+            if ((allPawns & (1L << rightDiagonal)) != 0)
+                return true;
         }
         return false;
     }
