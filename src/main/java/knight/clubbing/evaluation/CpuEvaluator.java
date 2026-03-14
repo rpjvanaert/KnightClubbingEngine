@@ -9,7 +9,8 @@ public class CpuEvaluator implements Evaluator {
     public CpuEvaluator() {
         this(
                 new MaterialFeature(),
-                new PstFeature()
+                new PstFeature(),
+                new PawnStructureFeature()
         );
     }
 
