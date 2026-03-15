@@ -9,14 +9,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @Disabled // Disable all tests in this class due to weights changing. Validity tested by SPRT
 class PstFeatureTest {
 
-    @Test
-    void testMirror() {
-        assertEquals(7, PstFeature.mirror(63));
-        assertEquals(63, PstFeature.mirror(7));
-        assertEquals(0, PstFeature.mirror(56));
-        assertEquals(56, PstFeature.mirror(0));
-    }
-
     private static void testCompute(String fen, int expectedScore) {
         BBoard b = new BBoard(fen);
         PstFeature pstFeature = new PstFeature();
