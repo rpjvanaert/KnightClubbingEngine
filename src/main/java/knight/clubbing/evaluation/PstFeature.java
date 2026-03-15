@@ -2,6 +2,7 @@ package knight.clubbing.evaluation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import knight.clubbing.core.BBoard;
+import knight.clubbing.core.BBoardHelper;
 import knight.clubbing.core.BPiece;
 
 import java.io.IOException;
@@ -46,16 +47,12 @@ public class PstFeature implements EvalFeature {
             int squareIndex = Long.numberOfTrailingZeros(pieceBitboard);
             int piece = board.getPieceBoards()[squareIndex];
             boolean isWhite = BPiece.isWhite(piece);
-            squareIndex = isWhite ? mirror(squareIndex) : squareIndex;
+            squareIndex = isWhite ? BBoardHelper.mirrorSquare(squareIndex) : squareIndex;
             score += isWhite ? PST[BPiece.getPieceType(piece)][squareIndex]: -PST[BPiece.getPieceType(piece)][squareIndex];
             pieceBitboard &= pieceBitboard - 1;
         }
 
         return score;
-    }
-
-    protected static int mirror(int square) {
-        return square ^ 56;
     }
 
     @Override
