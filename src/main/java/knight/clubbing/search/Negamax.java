@@ -131,6 +131,16 @@ public class Negamax implements Search {
             return 0;
         }
 
+        if (depth >= 3 && !board.isInCheck() && ply > 0) {
+            board.makeNullMove();
+            int score = -negamax(board, depth -3, -beta, -alpha, ply + 1);
+            board.undoNullMove();
+
+            if (score >= beta) {
+                return beta;
+            }
+        }
+
         for (BMove move : nextMoves) {
             boolean isCapture = board.getPieceBoards()[move.targetSquare()] != 0;
 
