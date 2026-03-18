@@ -110,7 +110,7 @@ public class Negamax implements Search {
         }
 
         if (shouldStop()) return 0;
-        if (depth <= 0) return evaluator.evaluate(board);
+        if (depth <= 0) return quiescence(board, alpha, beta, ply);
 
         int bestScore = -INF;
         BMove bestMove = null;
@@ -163,6 +163,39 @@ public class Negamax implements Search {
 
         return bestScore;
     }
+
+    private int quiescence(BBoard board, int alpha, int beta, int ply) {
+        nodes++;
+
+        int standPat = evaluator.evaluate(board);
+
+        if (standPat >= beta) {
+            return beta;
+        }
+
+        if (alpha < standPat) {
+            alpha = standPat;
+        }
+
+        BMove[] captures = new MoveGenerator(board).generateMoves(true);
+        orderer.order(captures, board, new MoveOrderingContext(ply, killerMoves));
+
+        for (BMove move : captures) {
+            board.makeMove(move, true);
+            int score = -quiescence(board, -beta, -alpha, ply + 1);
+            board.undoMove(move, true);
+
+            if (score >= beta) {
+                return beta;
+            }
+            if (score > alpha) {
+                alpha = score;
+            }
+        }
+
+        return alpha;
+    }
+
 
     private boolean containsTransposition(BBoard board) {
         return transpositionTable.containsKey(board.getState().getZobristKey());
