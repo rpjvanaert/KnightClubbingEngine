@@ -2,6 +2,7 @@ package knight.clubbing.search;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
+import knight.clubbing.core.BPiece;
 import knight.clubbing.movegen.MoveGenerator;
 import knight.clubbing.evaluation.CpuEvaluator;
 import knight.clubbing.evaluation.Evaluator;
@@ -131,7 +132,7 @@ public class Negamax implements Search {
             return 0;
         }
 
-        if (depth >= 3 && !board.isInCheck() && ply > 0) {
+        if (depth >= 3 && !board.isInCheck() && ply > 0 && hasNonPawnMaterial(board)) {
             board.makeNullMove();
             int score = -negamax(board, depth -3, -beta, -alpha, ply + 1);
             board.undoNullMove();
@@ -227,5 +228,22 @@ public class Negamax implements Search {
         if (stop) return true;
         stop = timeLimit > 0 && getTimeTakenMillis() >= timeLimit;
         return stop;
+    }
+
+    private boolean hasNonPawnMaterial(BBoard board) {
+
+        boolean whiteToMove = board.isWhiteToMove();
+
+        if (checkIfHasPiece(board, whiteToMove, BPiece.rook)) return true;
+        if (checkIfHasPiece(board, whiteToMove, BPiece.bishop)) return true;
+        if (checkIfHasPiece(board, whiteToMove, BPiece.knight)) return true;
+        if (checkIfHasPiece(board, whiteToMove, BPiece.queen)) return true;
+
+        return false;
+    }
+
+    private static boolean checkIfHasPiece(BBoard board, boolean whiteToMove, int pieceIndex) {
+        long bitboard = board.getBitboard(BPiece.makePiece(pieceIndex, whiteToMove));
+        return bitboard != 0;
     }
 }
