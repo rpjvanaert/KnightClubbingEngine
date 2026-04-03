@@ -105,9 +105,7 @@ public class DefaultMoveOrderer implements MoveOrderer {
                 current + clampedBonus - current * Math.abs(clampedBonus) / MAX_HISTORY_SCORE;
     }
 
-    public void updateHistory(BMove move, int depth, boolean isWhite, boolean isCapture) {
-        if (isCapture) return;
-
+    public void updateHistory(BMove move, int depth, boolean isWhite) {
         int color = isWhite ? 0 : 1;
         int bonus = depth * depth;
         historyTable[color][move.startSquare()][move.targetSquare()] += bonus;
@@ -133,6 +131,17 @@ public class DefaultMoveOrderer implements MoveOrderer {
         historyTable[color][move.startSquare()][move.targetSquare()] =
                 current + negClamped - current * Math.abs(negClamped) / MAX_HISTORY_SCORE;
     }
+
+    public void clearHistory() {
+        for (int color = 0; color < 2; color++) {
+            for (int from = 0; from < 64; from++) {
+                for (int to = 0; to < 64; to++) {
+                    historyTable[color][from][to] = 0;
+                }
+            }
+        }
+    }
+
 
     @Override
     public String name() {

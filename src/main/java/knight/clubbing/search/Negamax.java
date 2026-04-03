@@ -44,6 +44,8 @@ public class Negamax implements Search {
         this.stop = false;
         SearchResponse bestResponse = null;
 
+        orderer.clearHistory();
+
         for (int depth = 1; !stop && depth <= settings.maxDepth(); depth++) {
 
             SearchResponse result = searchAtDepth(board, depth);
@@ -80,11 +82,23 @@ public class Negamax implements Search {
 
         orderer.order(nextMoves, board, new MoveOrderingContext(0, killerMoves));
 
-        for (BMove move : nextMoves) {
+        for (int moveIndex = 0; moveIndex < nextMoves.length; moveIndex++) {
+            BMove move = nextMoves[moveIndex];
             if (shouldStop()) break;
 
             board.makeMove(move, true);
-            int score = -negamax(board, depth - 1, -beta, -alpha, 1);
+            int score;
+
+            if (moveIndex == 0) {
+                score = -negamax(board, depth - 1, -beta, -alpha, 1);
+            } else {
+                score = -negamax(board, depth - 1, -alpha - 1, -alpha, 1);
+
+                if (score > alpha && score < beta) {
+                    score = -negamax(board, depth - 1, -beta, -alpha, 1);
+                }
+            }
+
             board.undoMove(move, true);
 
             if (score > bestScore) {
@@ -93,6 +107,9 @@ public class Negamax implements Search {
             }
 
             alpha = Math.max(alpha, score);
+            if (alpha >= beta) {
+                break;
+            }
         }
 
         return new SearchResponse(bestScore, bestMove, depth, nodes, getTimeTakenMillis());
@@ -103,7 +120,7 @@ public class Negamax implements Search {
 
         if (containsTransposition(board)) {
             TranspositionEntry entry = getEntry(board);
-            if (entry.getDepth() > depth) {
+            if (entry.getDepth() >= depth) {
                 if (entry.getFlag() == 0) return entry.getScore();
                 if (entry.getFlag() == 1 && entry.getScore() <= alpha) return entry.getScore();
                 if (entry.getFlag() == 2 && entry.getScore() >= beta) return entry.getScore();
@@ -134,7 +151,7 @@ public class Negamax implements Search {
 
         if (depth >= 3 && !board.isInCheck() && ply > 0 && hasNonPawnMaterial(board)) {
             board.makeNullMove();
-            int score = -negamax(board, depth -3, -beta, -alpha, ply + 1);
+            int score = -negamax(board, depth - 3, -beta, -alpha, ply + 1);
             board.undoNullMove();
 
             if (score >= beta) {
@@ -142,11 +159,27 @@ public class Negamax implements Search {
             }
         }
 
-        for (BMove move : nextMoves) {
+        // PVS loop
+        for (int moveIndex = 0; moveIndex < nextMoves.length; moveIndex++) {
+            BMove move = nextMoves[moveIndex];
+
+            // Capture status and color BEFORE making the move (bug fix!)
             boolean isCapture = board.getPieceBoards()[move.targetSquare()] != 0;
+            boolean isWhite = board.isWhiteToMove();
 
             board.makeMove(move, true);
-            int score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
+            int score;
+
+            if (moveIndex == 0) {
+                score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
+            } else {
+                score = -negamax(board, depth - 1, -alpha - 1, -alpha, ply + 1);
+
+                if (score > alpha && score < beta) {
+                    score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
+                }
+            }
+
             board.undoMove(move, true);
 
             if (score > bestScore) {
@@ -156,19 +189,17 @@ public class Negamax implements Search {
 
             alpha = Math.max(alpha, score);
             if (alpha >= beta) {
-                orderer.updateHistory(move, depth, board.isWhiteToMove(), isCapture);
+                if (!isCapture) {
+                    orderer.updateHistory(move, depth, isWhite);
 
-                if (killerMoves[ply][0] == null || !killerMoves[ply][0].equals(move)) {
                     killerMoves[ply][1] = killerMoves[ply][0];
                     killerMoves[ply][0] = move;
                 }
                 break;
             } else {
-                orderer.penalizeHistory(move, depth, board.isWhiteToMove(), isCapture);
+                orderer.penalizeHistory(move, depth, isWhite, isCapture);
             }
         }
-
-
 
         transpositionTable.put(board.getState().getZobristKey(), new TranspositionEntry(depth, bestScore, TranspositionEntry.determineFlag(beta, bestScore, originalAlpha)));
 
