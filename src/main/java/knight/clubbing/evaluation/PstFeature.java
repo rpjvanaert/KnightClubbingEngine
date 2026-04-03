@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BBoardHelper;
 import knight.clubbing.core.BPiece;
+import knight.clubbing.core.PopLsbResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,12 +45,13 @@ public class PstFeature implements EvalFeature {
         long pieceBitboard = board.getAllPiecesBoard();
 
         while (pieceBitboard != 0) {
-            int squareIndex = Long.numberOfTrailingZeros(pieceBitboard);
+            PopLsbResult popResult = PopLsbResult.popLsb(pieceBitboard);
+            int squareIndex = popResult.index;
             int piece = board.getPieceBoards()[squareIndex];
             boolean isWhite = BPiece.isWhite(piece);
             squareIndex = isWhite ? BBoardHelper.mirrorSquare(squareIndex) : squareIndex;
             score += isWhite ? PST[BPiece.getPieceType(piece)][squareIndex]: -PST[BPiece.getPieceType(piece)][squareIndex];
-            pieceBitboard &= pieceBitboard - 1;
+            pieceBitboard = popResult.remaining;
         }
 
         return score;
