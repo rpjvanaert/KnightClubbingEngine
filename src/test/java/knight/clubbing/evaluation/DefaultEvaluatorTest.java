@@ -3,6 +3,7 @@ package knight.clubbing.evaluation;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.movegen.MoveGenerator;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -11,7 +12,7 @@ import java.util.Random;
 
 class DefaultEvaluatorTest {
 
-    @Test
+    @Test @Tag("strength")
     void benchmarkEvaluation() {
         BBoard board = new BBoard();
         DefaultEvaluator evaluator = new DefaultEvaluator();
@@ -24,7 +25,7 @@ class DefaultEvaluatorTest {
         System.out.println("10M evaluations (single position): " + elapsed / 1_000_000 + "ms");
     }
 
-    @Test
+    @Test @Tag("strength")
     void benchmarkEvaluationVaryingPositions() {
         List<BBoard> testPositions = generateTestPositions(1000);
         DefaultEvaluator evaluator = new DefaultEvaluator();
@@ -101,7 +102,7 @@ class DefaultEvaluatorTest {
         return positions;
     }
 
-    @Test
+    @Test @Tag("strength")
     void benchmarkEvaluationGamePhases() {
         List<BBoard> testPositions = generateGamePhasePositions();
         DefaultEvaluator evaluator = new DefaultEvaluator();
