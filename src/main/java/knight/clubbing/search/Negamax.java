@@ -47,17 +47,20 @@ public class Negamax implements Search {
         orderer.clearHistory();
 
         for (int depth = 1; !stop && depth <= settings.maxDepth(); depth++) {
+            try {
+                SearchResponse result = searchAtDepth(board, depth);
+                bestResponse = result;
 
-            SearchResponse result = searchAtDepth(board, depth);
-            bestResponse = result;
+                checkStop();
 
-            if (shouldStop()) break;
+                long elapsed = getTimeTakenMillis();
+                String pv = result.bestMove() != null ? result.bestMove() : "";
+                System.out.println("info depth " + depth + " score cp " + result.score() + " time " + elapsed + " pv " + pv);
 
-            long elapsed = getTimeTakenMillis();
-            String pv = result.bestMove() != null ? result.bestMove() : "";
-            System.out.println("info depth " + depth + " score cp " + result.score() + " time " + elapsed + " pv " + pv);
-
-            if (isDecisive(result)) break;
+                if (isDecisive(result)) break;
+            } catch (SearchInterruptedException e) {
+                break;
+            }
         }
 
 
@@ -84,7 +87,7 @@ public class Negamax implements Search {
 
         for (int moveIndex = 0; moveIndex < nextMoves.length; moveIndex++) {
             BMove move = nextMoves[moveIndex];
-            if (shouldStop()) break;
+            checkStop();
 
             board.makeMove(move, true);
             int score;
@@ -118,6 +121,9 @@ public class Negamax implements Search {
     private int negamax(BBoard board, int depth, int alpha, int beta, int ply) {
         nodes++;
 
+        if (isNthNode(1023))
+            checkStop();
+
         if (containsTransposition(board)) {
             TranspositionEntry entry = getEntry(board);
             if (entry.getDepth() >= depth) {
@@ -127,7 +133,6 @@ public class Negamax implements Search {
             }
         }
 
-        if (shouldStop()) return 0;
         if (depth <= 0) return quiescence(board, alpha, beta, ply);
 
         int bestScore = -INF;
@@ -255,10 +260,21 @@ public class Negamax implements Search {
         return System.currentTimeMillis() - startTime;
     }
 
-    private boolean shouldStop() {
-        if (stop) return true;
-        stop = timeLimit > 0 && getTimeTakenMillis() >= timeLimit;
-        return stop;
+    private void checkStop() {
+        if (stop) throw new SearchInterruptedException();
+        if (Thread.currentThread().isInterrupted()) {
+            stop = true;
+            throw new SearchInterruptedException();
+        }
+
+        if (timeLimit > 0 && getTimeTakenMillis() >= timeLimit) {
+            stop = true;
+            throw new SearchInterruptedException();
+        }
+    }
+
+    private boolean isNthNode(int n) {
+        return (nodes & n) == 0;
     }
 
     private boolean hasNonPawnMaterial(BBoard board) {
