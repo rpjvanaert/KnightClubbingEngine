@@ -270,8 +270,6 @@ public class DefaultEvaluator implements Evaluator {
         mgScore += mgScore(mobilityWhite) - mgScore(mobilityBlack);
         egScore += egScore(mobilityWhite) - egScore(mobilityBlack);
 
-        int score = 0;
-
         int bishopPairWhite = bishopPair(board, BPiece.white);
         int bishopPairBlack = bishopPair(board, BPiece.black);
         mgScore += mgScore(bishopPairWhite) - mgScore(bishopPairBlack);
@@ -280,11 +278,11 @@ public class DefaultEvaluator implements Evaluator {
         int pawnStructureWhite = pawnStructure(board, BPiece.white);
         int pawnStructureBlack = pawnStructure(board, BPiece.black);
         mgScore += mgScore(pawnStructureWhite) - mgScore(pawnStructureBlack);
-        egScore += egScore(pawnStructureWhite) - pawnStructureBlack;
+        egScore += egScore(pawnStructureWhite) - egScore(pawnStructureBlack);
 
         int kingSafetyWhite = kingSafety(board, BPiece.white);
         int kingSafetyBlack = kingSafety(board, BPiece.black);
-        mgScore += mgScore(kingSafetyWhite) - kingSafetyBlack;
+        mgScore += mgScore(kingSafetyWhite) - mgScore(kingSafetyBlack);
         egScore += egScore(kingSafetyWhite) - egScore(kingSafetyBlack);
 
         int rookWhite = rook(board, BPiece.white);
@@ -292,7 +290,7 @@ public class DefaultEvaluator implements Evaluator {
         mgScore += mgScore(rookWhite) - mgScore(rookBlack);
         egScore += egScore(rookWhite) - egScore(rookBlack);
 
-        score += (mgScore * phase + egScore * (TOTAL_PHASE - phase)) / TOTAL_PHASE;
+        int score = (mgScore * phase + egScore * (TOTAL_PHASE - phase)) / TOTAL_PHASE;
         return board.isWhiteToMove() ? score : -score;
     }
 
