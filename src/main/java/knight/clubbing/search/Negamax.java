@@ -3,8 +3,8 @@ package knight.clubbing.search;
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.core.BPiece;
+import knight.clubbing.evaluation.DefaultEvaluator;
 import knight.clubbing.movegen.MoveGenerator;
-import knight.clubbing.evaluation.CpuEvaluator;
 import knight.clubbing.evaluation.Evaluator;
 import knight.clubbing.ordering.*;
 
@@ -31,7 +31,7 @@ public class Negamax implements Search {
     private final Map<Long, TranspositionEntry> transpositionTable = new HashMap<>();
 
     public Negamax() {
-        this.evaluator = new CpuEvaluator();
+        this.evaluator = new DefaultEvaluator();
         this.orderer = new DefaultMoveOrderer();
     }
 
