@@ -2,10 +2,8 @@ package knight.clubbing;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
-import knight.clubbing.movegen.MoveGenerator;
-import knight.clubbing.ordering.BasicMoveOrderer;
-import knight.clubbing.ordering.MoveOrderer;
-import knight.clubbing.ordering.MvvLvaFeature;
+import knight.clubbing.movegen.PrecomputedMoveData;
+import knight.clubbing.movegen.magic.PrecomputedMagics;
 import knight.clubbing.search.Negamax;
 import knight.clubbing.search.SearchResponse;
 import knight.clubbing.search.SearchSettings;
@@ -35,6 +33,36 @@ public class UCI {
     private BBoard board;
     private Thread searchThread;
     private Negamax negamax;
+    private static volatile boolean initialized = false;
+
+    public UCI() {
+        init();
+    }
+
+    private static void init() {
+        if (initialized)
+            return;
+
+        synchronized (UCI.class) {
+            if (initialized)
+                return;
+
+            PrecomputedMoveData.getInstance();
+            @SuppressWarnings("unused")
+            var unused = PrecomputedMagics.ROOK_MAGICS;
+
+            // Warm-up
+            try {
+                BBoard board = new BBoard();
+                Negamax negamax = new Negamax();
+                negamax.search(board, new SearchSettings(1, 1, 1, false));
+            } catch (Exception ignored) {
+                // ignore
+            }
+
+            initialized = true;
+        }
+    }
 
     protected BBoard getBoard() {
         return board;
@@ -55,12 +83,14 @@ public class UCI {
 
         switch (line) {
             case "uci": {
+                init();
                 sendCommand("id name KnightClubbing");
                 sendCommand("id author Ralf van Aert");
                 sendCommand("uciok");
                 break;
             }
             case "isready": {
+                init();
                 sendCommand("readyok");
                 break;
             }
@@ -184,14 +214,7 @@ public class UCI {
                 if (move != null && !move.isEmpty()) {
                     sendCommand("bestmove " + move);
                 } else {
-                    BMove[] someMoves = new MoveGenerator(board).generateMoves(false);
-                    if (someMoves.length > 0) {
-                        MoveOrderer moveOrderer = new BasicMoveOrderer();
-                        moveOrderer.order(someMoves, board, null);
-                        sendCommand("bestmove " + someMoves[0].getUci());
-                    } else {
-                        sendCommand("bestmove 0000");
-                    }
+                    sendCommand("bestmove 0000");
                 }
             }
         });
