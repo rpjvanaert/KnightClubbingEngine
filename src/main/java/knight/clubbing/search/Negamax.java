@@ -55,7 +55,8 @@ public class Negamax implements Search {
 
                 long elapsed = getTimeTakenMillis();
                 String pv = result.bestMove() != null ? result.bestMove() : "";
-                System.out.println("info depth " + depth + " score cp " + result.score() + " time " + elapsed + " pv " + pv);
+                if (!settings.silent())
+                    System.out.println("info depth " + depth + " score cp " + result.score() + " time " + elapsed + " pv " + pv);
 
                 if (isDecisive(result)) break;
             } catch (SearchInterruptedException e) {
@@ -196,9 +197,10 @@ public class Negamax implements Search {
             if (alpha >= beta) {
                 if (!isCapture) {
                     orderer.updateHistory(move, depth, isWhite);
-
-                    killerMoves[ply][1] = killerMoves[ply][0];
-                    killerMoves[ply][0] = move;
+                    if (ply < MAX_DEPTH_KILLER) {
+                        killerMoves[ply][1] = killerMoves[ply][0];
+                        killerMoves[ply][0] = move;
+                    }
                 }
                 break;
             } else {
@@ -225,7 +227,7 @@ public class Negamax implements Search {
         }
 
         BMove[] captures = new MoveGenerator(board).generateMoves(true);
-        orderer.order(captures, board, new MoveOrderingContext(ply, killerMoves));
+        orderer.order(captures, board, null);
 
         for (BMove move : captures) {
             board.makeMove(move, true);

@@ -33,19 +33,14 @@ public class UCI {
     private BBoard board;
     private Thread searchThread;
     private Negamax negamax;
-    private static volatile boolean initialized = false;
 
     public UCI() {
         init();
     }
 
     private static void init() {
-        if (initialized)
-            return;
 
         synchronized (UCI.class) {
-            if (initialized)
-                return;
 
             PrecomputedMoveData.getInstance();
             @SuppressWarnings("unused")
@@ -55,12 +50,10 @@ public class UCI {
             try {
                 BBoard board = new BBoard();
                 Negamax negamax = new Negamax();
-                negamax.search(board, new SearchSettings(1, 1, 1, false));
+                negamax.search(board, new SearchSettings(2, 5, 1, false, true));
             } catch (Exception ignored) {
                 // ignore
             }
-
-            initialized = true;
         }
     }
 
@@ -92,6 +85,10 @@ public class UCI {
             case "isready": {
                 init();
                 sendCommand("readyok");
+                break;
+            }
+            case "ucinewgame": {
+                board = new BBoard();
                 break;
             }
             case "stop": {
@@ -195,7 +192,7 @@ public class UCI {
                 } else {
                     moveTime = 60000; // 60 seconds default
                 }
-                SearchResponse response = negamax.search(board, new SearchSettings(depth, moveTime, 1, false));
+                SearchResponse response = negamax.search(board, new SearchSettings(depth, moveTime, 1, false, false));
                 move = response.bestMove();
             } catch (Throwable t) {
                 t.printStackTrace();

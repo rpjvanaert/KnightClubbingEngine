@@ -37,7 +37,7 @@ class BestMoveTests {
         Search search = new Negamax();
 
         // Act
-        SearchResponse result = search.search(board, new SearchSettings(10, 1000, 1, false));
+        SearchResponse result = search.search(board, new SearchSettings(10, 1000, 1, false, false));
 
         // Assert
         assertNotNull(result, "Search should return a result");

@@ -63,7 +63,7 @@ public class DefaultMoveOrderer implements MoveOrderer {
             BMove[][] killerMoves = context.getKillerMoves();
             int ply = context.getPly();
 
-            if (killerMoves != null && ply >= 0) {
+            if (killerMoves != null && ply >= 0 && ply < killerMoves.length) {
                 if (move.equals(killerMoves[ply][0])) {
                     score += 10000;
                 } else if (move.equals(killerMoves[ply][1])) {
