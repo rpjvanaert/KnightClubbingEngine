@@ -92,23 +92,29 @@ public class UCI {
                 break;
             }
             case "stop": {
-                if (searchThread != null) searchThread.interrupt();
+                stopSearchThread();
                 break;
             }
             case "quit" : {
-                if (searchThread != null) searchThread.interrupt();
+                stopSearchThread();
                 System.exit(0);
                 break;
             }
             default: {
                 if (line.startsWith("position")) {
+                    stopSearchThread();
                     handlePosition(line);
                 } else if (line.startsWith("go")) {
+                    stopSearchThread();
                     handleGo(line);
                 }
                 break;
             }
         }
+    }
+
+    private void stopSearchThread() {
+        if (searchThread != null) searchThread.interrupt();
     }
 
     private void sendCommand(String line) {
