@@ -33,14 +33,32 @@ public class DefaultMoveOrderer implements MoveOrderer {
         int rank = move.targetSquare() / 8;
         int file = move.targetSquare() % 8;
 
-        // MVV-LVA
         int victimValue = PieceValues.MVVLVA_VALUES[BPiece.getPieceType(victimPiece)];
         int aggressorValue = PieceValues.MVVLVA_VALUES[BPiece.getPieceType(aggressorPiece)];
+        boolean isCapture = victimPiece != BPiece.none;
 
-        score += victimValue - aggressorValue;
+        if (isCapture) {
+            // MVV-LVA
+            score += 1_000_000 + victimValue - aggressorValue;
 
-        // History heuristic
-        score += historyTable[board.isWhiteToMove() ? 0 : 1][move.startSquare()][move.targetSquare()] / HISTORY_SCALE;
+        } else {
+            // Killer moves
+            if (context != null) {
+                BMove[][] killerMoves = context.getKillerMoves();
+                int ply = context.getPly();
+
+                if (killerMoves != null && ply >= 0 && ply < killerMoves.length) {
+                    if (move.equals(killerMoves[ply][0])) {
+                        score += 10000;
+                    } else if (move.equals(killerMoves[ply][1])) {
+                        score += 9000;
+                    }
+                }
+            }
+
+            // History heuristic
+            score += historyTable[board.isWhiteToMove() ? 0 : 1][move.startSquare()][move.targetSquare()] / HISTORY_SCALE;
+        }
 
         // Center
         if ((rank == 3 || rank == 4) && (file == 3 || file == 4))
@@ -58,19 +76,10 @@ public class DefaultMoveOrderer implements MoveOrderer {
                 break;
         }
 
-        // Killer moves
-        if (context != null) {
-            BMove[][] killerMoves = context.getKillerMoves();
-            int ply = context.getPly();
-
-            if (killerMoves != null && ply >= 0 && ply < killerMoves.length) {
-                if (move.equals(killerMoves[ply][0])) {
-                    score += 10000;
-                } else if (move.equals(killerMoves[ply][1])) {
-                    score += 9000;
-                }
-            }
+        if (move.isPromotion()) {
+            score += move.promotionPieceType() == BPiece.queen ? 900_000 : 100_000;
         }
+
         return score;
     }
 
