@@ -45,6 +45,9 @@ public class EvalParams {
 
     public EvalParams() {
         this.values = new int[SIZE];
+        mgPst[0] = new int[64];
+        egPst[0] = new int[64];
+
         // defaults
         values[IDX_MG_PAWN] = 100;
         values[IDX_EG_PAWN] = 110;
@@ -73,13 +76,6 @@ public class EvalParams {
         values[IDX_EG_ROOK_OPEN] = 15;
         values[IDX_MG_ROOK_SEMIOPEN] = 12;
         values[IDX_EG_ROOK_SEMIOPEN] = 10;
-
-        initPst();
-    }
-
-    private void initPst() {
-        mgPst[0] = new int[64];
-        egPst[0] = new int[64];
 
         mgPst[BPiece.pawn] = new int[]{
                 0,   0,   0,   0,   0,   0,   0,   0,
