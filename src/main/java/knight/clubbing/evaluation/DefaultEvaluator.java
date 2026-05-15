@@ -8,28 +8,9 @@ import knight.clubbing.movegen.PrecomputedMoveData;
 import knight.clubbing.movegen.magic.Magic;
 
 import static knight.clubbing.core.BBoardHelper.FILE_MASKS;
+import static knight.clubbing.evaluation.EvalParams.*;
 
 public class DefaultEvaluator implements Evaluator {
-
-    private static final int[] MG_PIECE_VALUES = {
-            0,      // Empty
-            100,    // Pawn
-            320,    // Knight
-            330,    // Bishop
-            500,    // Rook
-            950,    // Queen
-            0       // King
-    };
-
-    private static final int[] EG_PIECE_VALUES = {
-            0,      // Empty
-            110,    // Pawn
-            300,    // Knight
-            330,    // Bishop
-            550,    // Rook
-            1000,   // Queen
-            0       // King
-    };
 
     private static final int PAWN_PHASE = 0;
     private static final int KNIGHT_PHASE = 1;
@@ -45,9 +26,6 @@ public class DefaultEvaluator implements Evaluator {
 
     private static final PrecomputedMoveData moveData = PrecomputedMoveData.getInstance();
 
-    private static final int[][] MG_PST = new int[7][64];
-    private static final int[][] EG_PST = new int[7][64];
-
     private static final long[] FILE_FILL_MASKS = new long[8];
     private static final long[] ADJACENT_FILE_MASKS = new long[8];
     private static final long[] WHITE_AHEAD_MASKS = new long[64];
@@ -56,141 +34,6 @@ public class DefaultEvaluator implements Evaluator {
     private static final long[][] PAWN_SUPPORT_MASKS = new long[2][64];
 
     static {
-        MG_PST[0] = new int[64];
-        EG_PST[0] = new int[64];
-
-        MG_PST[BPiece.pawn] = new int[]{
-                0,   0,   0,   0,   0,   0,   0,   0,
-                5,  10,  10, -20, -20,  10,  10,   5,
-                5,  -5, -10,   0,   0, -10,  -5,   5,
-                0,   0,   0,  20,  20,   0,   0,   0,
-                5,   5,  10,  25,  25,  10,   5,   5,
-                10,  10,  20,  30,  30,  20,  10,  10,
-                50,  50,  50,  50,  50,  50,  50,  50,
-                0,   0,   0,   0,   0,   0,   0,   0
-        };
-
-        EG_PST[BPiece.pawn] = new int[]{
-                0,   0,   0,   0,   0,   0,   0,   0,
-                10,  10,  10,  10,  10,  10,  10,  10,
-                20,  20,  20,  20,  20,  20,  20,  20,
-                30,  30,  30,  30,  30,  30,  30,  30,
-                40,  40,  40,  40,  40,  40,  40,  40,
-                50,  50,  50,  50,  50,  50,  50,  50,
-                70,  70,  70,  70,  70,  70,  70,  70,
-                0,   0,   0,   0,   0,   0,   0,   0
-        };
-
-        MG_PST[BPiece.knight] = new int[]{
-                -50, -40, -30, -30, -30, -30, -40, -50,
-                -40, -20,   0,   5,   5,   0, -20, -40,
-                -30,   5,  10,  15,  15,  10,   5, -30,
-                -30,   0,  15,  20,  20,  15,   0, -30,
-                -30,   5,  15,  20,  20,  15,   5, -30,
-                -30,   0,  10,  15,  15,  10,   0, -30,
-                -40, -20,   0,   0,   0,   0, -20, -40,
-                -50, -40, -30, -30, -30, -30, -40, -50
-        };
-
-        EG_PST[BPiece.knight] = new int[]{
-                -50, -40, -30, -30, -30, -30, -40, -50,
-                -40, -20,   0,   0,   0,   0, -20, -40,
-                -30,   0,   5,  10,  10,   5,   0, -30,
-                -30,   0,  10,  15,  15,  10,   0, -30,
-                -30,   0,  10,  15,  15,  10,   0, -30,
-                -30,   0,   5,  10,  10,   5,   0, -30,
-                -40, -20,   0,   0,   0,   0, -20, -40,
-                -50, -40, -30, -30, -30, -30, -40, -50
-        };
-
-        MG_PST[BPiece.bishop] = new int[]{
-                -20, -10, -10, -10, -10, -10, -10, -20,
-                -10,   5,   0,   0,   0,   0,   5, -10,
-                -10,  10,  10,  10,  10,  10,  10, -10,
-                -10,   0,  10,  10,  10,  10,   0, -10,
-                -10,   5,   5,  10,  10,   5,   5, -10,
-                -10,   0,   5,  10,  10,   5,   0, -10,
-                -10,   0,   0,   0,   0,   0,   0, -10,
-                -20, -10, -10, -10, -10, -10, -10, -20
-        };
-
-        EG_PST[BPiece.bishop] = new int[]{
-                -20, -10, -10, -10, -10, -10, -10, -20,
-                -10,   0,   0,   0,   0,   0,   0, -10,
-                -10,   0,   5,  10,  10,   5,   0, -10,
-                -10,   5,   5,  10,  10,   5,   5, -10,
-                -10,   0,  10,  10,  10,  10,   0, -10,
-                -10,  10,  10,  10,  10,  10,  10, -10,
-                -10,   5,   0,   0,   0,   0,   5, -10,
-                -20, -10, -10, -10, -10, -10, -10, -20
-        };
-
-        MG_PST[BPiece.rook] = new int[]{
-                0,   0,   0,   5,   5,   0,   0,   0,
-                -5,   0,   0,   0,   0,   0,   0,  -5,
-                -5,   0,   0,   0,   0,   0,   0,  -5,
-                -5,   0,   0,   0,   0,   0,   0,  -5,
-                -5,   0,   0,   0,   0,   0,   0,  -5,
-                -5,   0,   0,   0,   0,   0,   0,  -5,
-                5,  10,  10,  10,  10,  10,  10,   5,
-                0,   0,   0,   0,   0,   0,   0,   0
-        };
-
-        EG_PST[BPiece.rook] = new int[]{
-                0,   0,   0,   0,   0,   0,   0,   0,
-                5,  10,  10,  10,  10,  10,  10,   5,
-                -5,   0,   0,   0,   0,   0,   0,  -5,
-                -5,   0,   0,   0,   0,   0,   0,  -5,
-                -5,   0,   0,   0,   0,   0,   0,  -5,
-                -5,   0,   0,   0,   0,   0,   0,  -5,
-                -5,   0,   0,   0,   0,   0,   0,  -5,
-                0,   0,   0,   5,   5,   0,   0,   0
-        };
-
-        MG_PST[BPiece.queen] = new int[]{
-                -20, -10, -10,  -5,  -5, -10, -10, -20,
-                -10,   0,   5,   0,   0,   0,   0, -10,
-                -10,   5,   5,   5,   5,   5,   0, -10,
-                0,   0,   5,   5,   5,   5,   0,  -5,
-                -5,   0,   5,   5,   5,   5,   0,  -5,
-                -10,   0,   5,   5,   5,   5,   0, -10,
-                -10,   0,   0,   0,   0,   0,   0, -10,
-                -20, -10, -10,  -5,  -5, -10, -10, -20
-        };
-
-        EG_PST[BPiece.queen] = new int[]{
-                -20, -10, -10,  -5,  -5, -10, -10, -20,
-                -10,   0,   0,   0,   0,   0,   0, -10,
-                -10,   0,   5,   5,   5,   5,   0, -10,
-                -5,   0,   5,   5,   5,   5,   0,  -5,
-                0,   0,   5,   5,   5,   5,   0,  -5,
-                -10,   5,   5,   5,   5,   5,   0, -10,
-                -10,   0,   5,   0,   0,   0,   0, -10,
-                -20, -10, -10,  -5,  -5, -10, -10, -20
-        };
-
-        MG_PST[BPiece.king] = new int[]{
-                20,  30,  10,   0,   0,  10,  30,  20,
-                20,  20,   0,   0,   0,   0,  20,  20,
-                -10, -20, -20, -20, -20, -20, -20, -10,
-                -20, -30, -30, -40, -40, -30, -30, -20,
-                -30, -40, -40, -50, -50, -40, -40, -30,
-                -30, -40, -40, -50, -50, -40, -40, -30,
-                -30, -40, -40, -50, -50, -40, -40, -30,
-                -30, -40, -40, -50, -50, -40, -40, -30
-        };
-
-        EG_PST[BPiece.king] = new int[]{
-                -50, -30, -30, -30, -30, -30, -30, -50,
-                -30, -30,   0,   0,   0,   0, -30, -30,
-                -30, -10,  20,  30,  30,  20, -10, -30,
-                -30, -10,  30,  40,  40,  30, -10, -30,
-                -30, -10,  30,  40,  40,  30, -10, -30,
-                -30, -10,  20,  30,  30,  20, -10, -30,
-                -30, -20, -10,   0,   0, -10, -20, -30,
-                -50, -40, -30, -20, -20, -30, -40, -50
-        };
-
         for (int file = 0; file < 8; file++) {
             long fileMask = 0L;
             for (int rank = 0; rank < 8; rank++) {
@@ -251,17 +94,17 @@ public class DefaultEvaluator implements Evaluator {
 
 
     @Override
-    public int evaluate(BBoard board) {
+    public int evaluate(BBoard board, EvalParams params) {
         int mgScore = 0;
         int egScore = 0;
         int phase = gamePhase(board);
 
-        int materialScore = material(board);
+        int materialScore = material(board, params);
         mgScore += mgScore(materialScore);
         egScore += egScore(materialScore);
 
-        int pstWhite = pst(board, BPiece.white);
-        int pstBlack = pst(board, BPiece.black);
+        int pstWhite = pst(board, BPiece.white, params);
+        int pstBlack = pst(board, BPiece.black, params);
         mgScore += mgScore(pstWhite) - mgScore(pstBlack);
         egScore += egScore(pstWhite) - egScore(pstBlack);
 
@@ -270,23 +113,23 @@ public class DefaultEvaluator implements Evaluator {
         mgScore += mgScore(mobilityWhite) - mgScore(mobilityBlack);
         egScore += egScore(mobilityWhite) - egScore(mobilityBlack);
 
-        int bishopPairWhite = bishopPair(board, BPiece.white);
-        int bishopPairBlack = bishopPair(board, BPiece.black);
+        int bishopPairWhite = bishopPair(board, BPiece.white, params);
+        int bishopPairBlack = bishopPair(board, BPiece.black, params);
         mgScore += mgScore(bishopPairWhite) - mgScore(bishopPairBlack);
         egScore += egScore(bishopPairWhite) - egScore(bishopPairBlack);
 
-        int pawnStructureWhite = pawnStructure(board, BPiece.white);
-        int pawnStructureBlack = pawnStructure(board, BPiece.black);
+        int pawnStructureWhite = pawnStructure(board, BPiece.white, params);
+        int pawnStructureBlack = pawnStructure(board, BPiece.black, params);
         mgScore += mgScore(pawnStructureWhite) - mgScore(pawnStructureBlack);
         egScore += egScore(pawnStructureWhite) - egScore(pawnStructureBlack);
 
-        int kingSafetyWhite = kingSafety(board, BPiece.white);
-        int kingSafetyBlack = kingSafety(board, BPiece.black);
+        int kingSafetyWhite = kingSafety(board, BPiece.white, params);
+        int kingSafetyBlack = kingSafety(board, BPiece.black, params);
         mgScore += mgScore(kingSafetyWhite) - mgScore(kingSafetyBlack);
         egScore += egScore(kingSafetyWhite) - egScore(kingSafetyBlack);
 
-        int rookWhite = rook(board, BPiece.white);
-        int rookBlack = rook(board, BPiece.black);
+        int rookWhite = rook(board, BPiece.white, params);
+        int rookBlack = rook(board, BPiece.black, params);
         mgScore += mgScore(rookWhite) - mgScore(rookBlack);
         egScore += egScore(rookWhite) - egScore(rookBlack);
 
@@ -321,7 +164,7 @@ public class DefaultEvaluator implements Evaluator {
         return (short) (score & 0xFFFF);
     }
 
-    private int material(BBoard board) {
+    private int material(BBoard board, EvalParams params) {
         int mgWhite = 0, egWhite = 0;
 
         int wPawns = Long.bitCount(board.getBitboard(BPiece.whitePawn));
@@ -330,17 +173,17 @@ public class DefaultEvaluator implements Evaluator {
         int wRooks = Long.bitCount(board.getBitboard(BPiece.whiteRook));
         int wQueens = Long.bitCount(board.getBitboard(BPiece.whiteQueen));
 
-        mgWhite += wPawns * MG_PIECE_VALUES[BPiece.pawn];
-        mgWhite += wKnights * MG_PIECE_VALUES[BPiece.knight];
-        mgWhite += wBishops * MG_PIECE_VALUES[BPiece.bishop];
-        mgWhite += wRooks * MG_PIECE_VALUES[BPiece.rook];
-        mgWhite += wQueens * MG_PIECE_VALUES[BPiece.queen];
+        mgWhite += wPawns * params.values[IDX_MG_PAWN];
+        mgWhite += wKnights * params.values[IDX_MG_KNIGHT];
+        mgWhite += wBishops * params.values[IDX_MG_BISHOP];
+        mgWhite += wRooks * params.values[IDX_MG_ROOK];
+        mgWhite += wQueens * params.values[IDX_MG_QUEEN];
 
-        egWhite += wPawns * EG_PIECE_VALUES[BPiece.pawn];
-        egWhite += wKnights * EG_PIECE_VALUES[BPiece.knight];
-        egWhite += wBishops * EG_PIECE_VALUES[BPiece.bishop];
-        egWhite += wRooks * EG_PIECE_VALUES[BPiece.rook];
-        egWhite += wQueens * EG_PIECE_VALUES[BPiece.queen];
+        egWhite += wPawns * params.values[IDX_EG_PAWN];
+        egWhite += wKnights * params.values[IDX_EG_KNIGHT];
+        egWhite += wBishops * params.values[IDX_EG_BISHOP];
+        egWhite += wRooks * params.values[IDX_EG_ROOK];
+        egWhite += wQueens * params.values[IDX_EG_QUEEN];
 
         int mgBlack = 0, egBlack = 0;
 
@@ -350,53 +193,53 @@ public class DefaultEvaluator implements Evaluator {
         int bRooks = Long.bitCount(board.getBitboard(BPiece.blackRook));
         int bQueens = Long.bitCount(board.getBitboard(BPiece.blackQueen));
 
-        mgBlack += bPawns * MG_PIECE_VALUES[BPiece.pawn];
-        mgBlack += bKnights * MG_PIECE_VALUES[BPiece.knight];
-        mgBlack += bBishops * MG_PIECE_VALUES[BPiece.bishop];
-        mgBlack += bRooks * MG_PIECE_VALUES[BPiece.rook];
-        mgBlack += bQueens * MG_PIECE_VALUES[BPiece.queen];
+        mgBlack += bPawns * params.values[IDX_MG_PAWN];
+        mgBlack += bKnights * params.values[IDX_MG_KNIGHT];
+        mgBlack += bBishops * params.values[IDX_MG_BISHOP];
+        mgBlack += bRooks * params.values[IDX_MG_ROOK];
+        mgBlack += bQueens * params.values[IDX_MG_QUEEN];
 
-        egBlack += bPawns * EG_PIECE_VALUES[BPiece.pawn];
-        egBlack += bKnights * EG_PIECE_VALUES[BPiece.knight];
-        egBlack += bBishops * EG_PIECE_VALUES[BPiece.bishop];
-        egBlack += bRooks * EG_PIECE_VALUES[BPiece.rook];
-        egBlack += bQueens * EG_PIECE_VALUES[BPiece.queen];
+        egBlack += bPawns * params.values[IDX_EG_PAWN];
+        egBlack += bKnights * params.values[IDX_EG_KNIGHT];
+        egBlack += bBishops * params.values[IDX_EG_BISHOP];
+        egBlack += bRooks * params.values[IDX_EG_ROOK];
+        egBlack += bQueens * params.values[IDX_EG_QUEEN];
 
         return makeScore(mgWhite - mgBlack, egWhite - egBlack);
     }
 
-    private int pst(BBoard board, int bpieceColor) {
+    private int pst(BBoard board, int bpieceColor, EvalParams params) {
         int mgScore = 0;
         int egScore = 0;
 
-        int pawnScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.pawn, bpieceColor)), BPiece.pawn, bpieceColor);
+        int pawnScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.pawn, bpieceColor)), BPiece.pawn, bpieceColor, params);
         mgScore += mgScore(pawnScore);
         egScore += egScore(pawnScore);
 
-        int knightScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.knight, bpieceColor)), BPiece.knight, bpieceColor);
+        int knightScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.knight, bpieceColor)), BPiece.knight, bpieceColor, params);
         mgScore += mgScore(knightScore);
         egScore += egScore(knightScore);
 
-        int bishopScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.bishop, bpieceColor)), BPiece.bishop, bpieceColor);
+        int bishopScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.bishop, bpieceColor)), BPiece.bishop, bpieceColor, params);
         mgScore += mgScore(bishopScore);
         egScore += egScore(bishopScore);
 
-        int rookScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.rook, bpieceColor)), BPiece.rook, bpieceColor);
+        int rookScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.rook, bpieceColor)), BPiece.rook, bpieceColor, params);
         mgScore += mgScore(rookScore);
         egScore += egScore(rookScore);
 
-        int queenScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.queen, bpieceColor)), BPiece.queen, bpieceColor);
+        int queenScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.queen, bpieceColor)), BPiece.queen, bpieceColor, params);
         mgScore += mgScore(queenScore);
         egScore += egScore(queenScore);
 
-        int kingScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.king, bpieceColor)), BPiece.king, bpieceColor);
+        int kingScore = evaluatePiecePst(board.getBitboard(BPiece.makePiece(BPiece.king, bpieceColor)), BPiece.king, bpieceColor, params);
         mgScore += mgScore(kingScore);
         egScore += egScore(kingScore);
 
         return makeScore(mgScore, egScore);
     }
 
-    private int evaluatePiecePst(long bitboard, int piece, int bpieceColor) {
+    private int evaluatePiecePst(long bitboard, int piece, int bpieceColor, EvalParams params) {
         int mgScore = 0;
         int egScore = 0;
         boolean isWhite = bpieceColor == BPiece.white;
@@ -408,8 +251,8 @@ public class DefaultEvaluator implements Evaluator {
             // For black pieces, mirror the square vertically
             int pstSquare = isWhite ? square : BBoardHelper.mirrorSquare(square);
 
-            mgScore += MG_PST[piece][pstSquare];
-            egScore += EG_PST[piece][pstSquare];
+            mgScore += params.mgPst[piece][pstSquare];
+            egScore += params.egPst[piece][pstSquare];
 
             bitboard = result.remaining;
         }
@@ -500,14 +343,14 @@ public class DefaultEvaluator implements Evaluator {
         return makeScore(count, count / 2);
     }
 
-    private static int bishopPair(BBoard board, int bpieceColor) {
+    private static int bishopPair(BBoard board, int bpieceColor, EvalParams params) {
         boolean hasPair = Long.bitCount(board.getBitboard(BPiece.makePiece(BPiece.bishop, bpieceColor))) >= 2;
         if (!hasPair) return makeScore(0, 0);
 
-        return makeScore(30, 50);
+        return makeScore(params.values[IDX_MG_BISHOP_PAIR], params.values[IDX_EG_BISHOP_PAIR]);
     }
 
-    private static int pawnStructure(BBoard board, int bpieceColor) {
+    private static int pawnStructure(BBoard board, int bpieceColor, EvalParams params) {
         int mgScore = 0;
         int egScore = 0;
         boolean isWhite = BPiece.white == bpieceColor;
@@ -525,27 +368,27 @@ public class DefaultEvaluator implements Evaluator {
 
             // Doubled pawns
             if (Long.bitCount(fPawns & FILE_FILL_MASKS[file]) > 1) {
-                mgScore -= 15;
-                egScore -= 20;
+                mgScore += params.values[IDX_MG_DOUBLED_PAWN];
+                egScore += params.values[IDX_EG_DOUBLED_PAWN];
             }
 
             // Isolated pawns
             if ((fPawns & ADJACENT_FILE_MASKS[file]) == 0) {
-                mgScore -= 20;
-                egScore -= 25;
+                mgScore += params.values[IDX_MG_ISOLATED_PAWN];
+                egScore += params.values[IDX_EG_ISOLATED_PAWN];
             }
 
             // Passed pawns
             if ((ePawns & PASSED_PAWN_MASKS[bboardColor][square]) == 0) {
                 int bonus = isWhite ? rank : (7 - rank);
-                mgScore += bonus * 10;
-                egScore += bonus * 20;
+                mgScore += bonus * params.values[IDX_MG_PASSED_PAWN];
+                egScore += bonus * params.values[IDX_EG_PASSED_PAWN];
             }
 
             // Pawn chains
             if ((fPawns & PAWN_SUPPORT_MASKS[bboardColor][square]) != 0) {
-                mgScore += 16;
-                egScore += 12;
+                mgScore += params.values[IDX_MG_PAWN_CHAIN];
+                egScore += params.values[IDX_EG_PAWN_CHAIN];
             }
 
             fPawnsCopy = result.remaining;
@@ -554,7 +397,7 @@ public class DefaultEvaluator implements Evaluator {
         return makeScore(mgScore, egScore);
     }
 
-    private static int kingSafety(BBoard board, int bpieceColor) {
+    private static int kingSafety(BBoard board, int bpieceColor, EvalParams params) {
         int mgScore = 0;
         int egScore = 0;
         int bboardColor = bpieceColor == BPiece.white ? BBoard.whiteIndex : BBoard.blackIndex;
@@ -567,15 +410,15 @@ public class DefaultEvaluator implements Evaluator {
         // Penalize missing pawn shield
         for (int f = Math.max(0, kingFile - 1); f <= Math.min(7, kingFile + 1); f++) {
             if ((fPawns & FILE_MASKS[f]) == 0) {
-                mgScore -= 15;
-                egScore -= 3;
+                mgScore += params.values[IDX_MG_KING_SHIELD];
+                egScore += params.values[IDX_EG_KING_SHIELD];
             }
         }
 
         return makeScore(mgScore, egScore);
     }
 
-    private static int rook(BBoard board, int bpieceColor) {
+    private static int rook(BBoard board, int bpieceColor, EvalParams params) {
         int mgScore = 0;
         int egScore = 0;
 
@@ -593,12 +436,12 @@ public class DefaultEvaluator implements Evaluator {
             long fileMask = FILE_MASKS[file];
             if ((allPawns & fileMask) == 0) {
                 // Open file
-                mgScore += 25;
-                egScore += 15;
+                mgScore += params.values[IDX_MG_ROOK_OPEN];
+                egScore += params.values[IDX_EG_ROOK_OPEN];
             } else if ((friendlyPawns & fileMask) == 0) {
                 // Semi-open file
-                mgScore += 12;
-                egScore += 10;
+                mgScore += params.values[IDX_MG_ROOK_SEMIOPEN];
+                egScore += params.values[IDX_EG_ROOK_SEMIOPEN];
             }
 
             rooks = result.remaining;

@@ -4,6 +4,7 @@ import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
 import knight.clubbing.core.BPiece;
 import knight.clubbing.evaluation.DefaultEvaluator;
+import knight.clubbing.evaluation.EvalParams;
 import knight.clubbing.movegen.MoveGenerator;
 import knight.clubbing.evaluation.Evaluator;
 import knight.clubbing.ordering.*;
@@ -216,7 +217,7 @@ public class Negamax implements Search {
     private int quiescence(BBoard board, int alpha, int beta, int ply) {
         nodes++;
 
-        int standPat = evaluator.evaluate(board);
+        int standPat = evaluator.evaluate(board, new EvalParams());
 
         if (standPat >= beta) {
             return beta;

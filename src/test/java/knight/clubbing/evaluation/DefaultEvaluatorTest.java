@@ -19,7 +19,7 @@ class DefaultEvaluatorTest {
 
         long start = System.nanoTime();
         for (int i = 0; i < 10_000_000; i++) {
-            evaluator.evaluate(board);
+            evaluator.evaluate(board, new EvalParams());
         }
         long elapsed = System.nanoTime() - start;
         System.out.println("10M evaluations (single position): " + elapsed / 1_000_000 + "ms");
@@ -34,14 +34,14 @@ class DefaultEvaluatorTest {
 
         // Warm-up
         for (int i = 0; i < 1000; i++) {
-            evaluator.evaluate(testPositions.get(i % testPositions.size()));
+            evaluator.evaluate(testPositions.get(i % testPositions.size()), new EvalParams());
         }
 
         // Actual benchmark - only evaluation is timed
         long start = System.nanoTime();
         int iterations = 10_000_000;
         for (int i = 0; i < iterations; i++) {
-            evaluator.evaluate(testPositions.get(i % testPositions.size()));
+            evaluator.evaluate(testPositions.get(i % testPositions.size()), new EvalParams());
         }
         long elapsed = System.nanoTime() - start;
 
@@ -112,7 +112,7 @@ class DefaultEvaluatorTest {
         long start = System.nanoTime();
         int iterations = 5_000_000;
         for (int i = 0; i < iterations; i++) {
-            evaluator.evaluate(testPositions.get(i % testPositions.size()));
+            evaluator.evaluate(testPositions.get(i % testPositions.size()), new EvalParams());
         }
         long elapsed = System.nanoTime() - start;
 
