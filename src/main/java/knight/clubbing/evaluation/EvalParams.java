@@ -25,9 +25,9 @@ public class EvalParams {
     // Isolated pawn
     public static final int IDX_MG_ISOLATED_PAWN = 14;
     public static final int IDX_EG_ISOLATED_PAWN = 15;
-    // Passed pawn
-    public static final int IDX_MG_PASSED_PAWN = 16;
-    public static final int IDX_EG_PASSED_PAWN = 17;
+
+    // Empty idx: 16, 17
+
     // Pawn chain
     public static final int IDX_MG_PAWN_CHAIN = 18;
     public static final int IDX_EG_PAWN_CHAIN = 19;
@@ -49,33 +49,30 @@ public class EvalParams {
         egPst[0] = new int[64];
 
         // defaults
-        values[IDX_MG_PAWN] = 100;
-        values[IDX_EG_PAWN] = 110;
-        values[IDX_MG_KNIGHT] = 320;
-        values[IDX_EG_KNIGHT] = 300;
-        values[IDX_MG_BISHOP] = 330;
-        values[IDX_EG_BISHOP] = 330;
-        values[IDX_MG_ROOK] = 500;
-        values[IDX_EG_ROOK] = 550;
-        values[IDX_MG_QUEEN] = 950;
-        values[IDX_EG_QUEEN] = 1000;
-
-        values[IDX_MG_BISHOP_PAIR] = 30;
-        values[IDX_EG_BISHOP_PAIR] = 50;
-        values[IDX_MG_DOUBLED_PAWN] = -15;
-        values[IDX_EG_DOUBLED_PAWN] = -20;
-        values[IDX_MG_ISOLATED_PAWN] = -20;
-        values[IDX_EG_ISOLATED_PAWN] = -25;
-        values[IDX_MG_PASSED_PAWN] = 10;
-        values[IDX_EG_PASSED_PAWN] = 20;
-        values[IDX_MG_PAWN_CHAIN] = 16;
-        values[IDX_EG_PAWN_CHAIN] = 12;
-        values[IDX_MG_KING_SHIELD] = -15;
-        values[IDX_EG_KING_SHIELD] = -3;
-        values[IDX_MG_ROOK_OPEN] = 25;
-        values[IDX_EG_ROOK_OPEN] = 15;
-        values[IDX_MG_ROOK_SEMIOPEN] = 12;
-        values[IDX_EG_ROOK_SEMIOPEN] = 10;
+        values[IDX_MG_PAWN] = 13;
+        values[IDX_EG_PAWN] = 16;
+        values[IDX_MG_KNIGHT] = 1;
+        values[IDX_EG_KNIGHT] = 114;
+        values[IDX_MG_BISHOP] = -6;
+        values[IDX_EG_BISHOP] = 111;
+        values[IDX_MG_ROOK] = 24;
+        values[IDX_EG_ROOK] = 160;
+        values[IDX_MG_QUEEN] = 442;
+        values[IDX_EG_QUEEN] = 601;
+        values[IDX_MG_BISHOP_PAIR] = -1;
+        values[IDX_EG_BISHOP_PAIR] = -13;
+        values[IDX_MG_DOUBLED_PAWN] = -2;
+        values[IDX_EG_DOUBLED_PAWN] = 2;
+        values[IDX_MG_ISOLATED_PAWN] = 5;
+        values[IDX_EG_ISOLATED_PAWN] = -7;
+        values[IDX_MG_PAWN_CHAIN] = 1;
+        values[IDX_EG_PAWN_CHAIN] = 0;
+        values[IDX_MG_KING_SHIELD] = 4;
+        values[IDX_EG_KING_SHIELD] = -11;
+        values[IDX_MG_ROOK_OPEN] = -24;
+        values[IDX_EG_ROOK_OPEN] = -3;
+        values[IDX_MG_ROOK_SEMIOPEN] = -27;
+        values[IDX_EG_ROOK_SEMIOPEN] = -1;
 
         mgPst[BPiece.pawn] = new int[]{
                 0,   0,   0,   0,   0,   0,   0,   0,
@@ -208,11 +205,19 @@ public class EvalParams {
                 -30, -20, -10,   0,   0, -10, -20, -30,
                 -50, -40, -30, -20, -20, -30, -40, -50
         };
+
+        mgPassedPawnRank = new int[]{0, -21, -17, -11, -3, -3, 6, 0};
+
+        egPassedPawnRank = new int[]{0, 17, 17, 8, 14, 9, 49, 0};
+
     }
 
     public int[] values;
     public int[][] mgPst = new int[7][64];
     public int[][] egPst = new int[7][64];
+
+    public int[] mgPassedPawnRank = new int[8];
+    public int[] egPassedPawnRank = new int[8];
 
     public EvalParams(int[] values,  int[][] mgPst, int[][] egPst) {
         this.values = values;

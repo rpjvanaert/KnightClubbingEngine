@@ -380,9 +380,9 @@ public class DefaultEvaluator implements Evaluator {
 
             // Passed pawns
             if ((ePawns & PASSED_PAWN_MASKS[bboardColor][square]) == 0) {
-                int bonus = isWhite ? rank : (7 - rank);
-                mgScore += bonus * params.values[IDX_MG_PASSED_PAWN];
-                egScore += bonus * params.values[IDX_EG_PASSED_PAWN];
+                int rankPerspectively = isWhite ? rank : (7 - rank);
+                mgScore += params.mgPassedPawnRank[rankPerspectively];
+                egScore += params.egPassedPawnRank[rankPerspectively];
             }
 
             // Pawn chains
