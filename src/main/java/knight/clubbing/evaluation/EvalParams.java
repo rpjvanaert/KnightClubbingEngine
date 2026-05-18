@@ -49,30 +49,30 @@ public class EvalParams {
         egPst[0] = new int[64];
 
         // defaults
-        values[IDX_MG_PAWN] = 13;
-        values[IDX_EG_PAWN] = 16;
-        values[IDX_MG_KNIGHT] = 1;
-        values[IDX_EG_KNIGHT] = 114;
-        values[IDX_MG_BISHOP] = -6;
-        values[IDX_EG_BISHOP] = 111;
-        values[IDX_MG_ROOK] = 24;
-        values[IDX_EG_ROOK] = 160;
-        values[IDX_MG_QUEEN] = 442;
-        values[IDX_EG_QUEEN] = 601;
-        values[IDX_MG_BISHOP_PAIR] = -1;
-        values[IDX_EG_BISHOP_PAIR] = -13;
-        values[IDX_MG_DOUBLED_PAWN] = -2;
-        values[IDX_EG_DOUBLED_PAWN] = 2;
-        values[IDX_MG_ISOLATED_PAWN] = 5;
-        values[IDX_EG_ISOLATED_PAWN] = -7;
-        values[IDX_MG_PAWN_CHAIN] = 1;
-        values[IDX_EG_PAWN_CHAIN] = 0;
-        values[IDX_MG_KING_SHIELD] = 4;
-        values[IDX_EG_KING_SHIELD] = -11;
-        values[IDX_MG_ROOK_OPEN] = -24;
-        values[IDX_EG_ROOK_OPEN] = -3;
-        values[IDX_MG_ROOK_SEMIOPEN] = -27;
-        values[IDX_EG_ROOK_SEMIOPEN] = -1;
+        values[IDX_MG_PAWN] = 100;
+        values[IDX_EG_PAWN] = 120;
+        values[IDX_MG_KNIGHT] = 300;
+        values[IDX_EG_KNIGHT] = 290;
+        values[IDX_MG_BISHOP] = 300;
+        values[IDX_EG_BISHOP] = 330;
+        values[IDX_MG_ROOK] = 500;
+        values[IDX_EG_ROOK] = 550;
+        values[IDX_MG_QUEEN] = 950;
+        values[IDX_EG_QUEEN] = 1000;
+        values[IDX_MG_BISHOP_PAIR] = 5;
+        values[IDX_EG_BISHOP_PAIR] = 10;
+        values[IDX_MG_DOUBLED_PAWN] = -5;
+        values[IDX_EG_DOUBLED_PAWN] = -10;
+        values[IDX_MG_ISOLATED_PAWN] = -6;
+        values[IDX_EG_ISOLATED_PAWN] = -10;
+        values[IDX_MG_PAWN_CHAIN] = 2;
+        values[IDX_EG_PAWN_CHAIN] = 1;
+        values[IDX_MG_KING_SHIELD] = 10;
+        values[IDX_EG_KING_SHIELD] = 5;
+        values[IDX_MG_ROOK_OPEN] = 10;
+        values[IDX_EG_ROOK_OPEN] = 15;
+        values[IDX_MG_ROOK_SEMIOPEN] = 5;
+        values[IDX_EG_ROOK_SEMIOPEN] = 7;
 
         mgPst[BPiece.pawn] = new int[]{
                 0,   0,   0,   0,   0,   0,   0,   0,
