@@ -2,15 +2,15 @@ package knight.clubbing.search;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
+import knight.clubbing.core.BPiece;
+import knight.clubbing.evaluation.DefaultEvaluator;
+import knight.clubbing.evaluation.EvalParams;
 import knight.clubbing.movegen.MoveGenerator;
-import knight.clubbing.opening.OpeningBookEntry;
-import knight.clubbing.opening.OpeningService;
-import knight.clubbing.evaluation.CpuEvaluator;
 import knight.clubbing.evaluation.Evaluator;
-import knight.clubbing.ordering.BasicMoveOrderer;
-import knight.clubbing.ordering.MoveOrderer;
-import knight.clubbing.ordering.MoveOrderingContext;
-import knight.clubbing.ordering.MvvLvaFeature;
+import knight.clubbing.ordering.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static knight.clubbing.search.EngineConst.INF;
 import static knight.clubbing.search.EngineConst.MATE_SCORE;
@@ -24,23 +24,16 @@ public class Negamax implements Search {
     private SearchSettings settings;
 
     private final Evaluator evaluator;
-    private final MoveOrderer orderer;
-
-    private final OpeningService openingService;
+    private final DefaultMoveOrderer orderer;
 
     private static final int MAX_DEPTH_KILLER = 32;
     private final BMove[][] killerMoves = new BMove[MAX_DEPTH_KILLER][2];
 
-    public Negamax() {
-        this.openingService = new OpeningService();
-        this.evaluator = new CpuEvaluator();
-        this.orderer = new BasicMoveOrderer(new MvvLvaFeature());
-    }
+    private final Map<Long, TranspositionEntry> transpositionTable = new HashMap<>();
 
-    public Negamax(OpeningService openingService) {
-        this.openingService = openingService;
-        this.evaluator = new CpuEvaluator();
-        this.orderer = new BasicMoveOrderer(new MvvLvaFeature());
+    public Negamax() {
+        this.evaluator = new DefaultEvaluator();
+        this.orderer = new DefaultMoveOrderer();
     }
 
     @Override
@@ -48,27 +41,28 @@ public class Negamax implements Search {
         startTime = System.currentTimeMillis();
         timeLimit = settings.timeLimit();
 
-        if (openingService.exists(board.state.getZobristKey())) {
-            OpeningBookEntry entry = openingService.getBest(board.state.getZobristKey());
-            return new SearchResponse(entry.getScore(), entry.getMove(), 0, 0, getTimeTakenMillis());
-        }
-
         this.settings = settings;
         this.stop = false;
         SearchResponse bestResponse = null;
 
+        orderer.clearHistory();
+
         for (int depth = 1; !stop && depth <= settings.maxDepth(); depth++) {
+            try {
+                SearchResponse result = searchAtDepth(board, depth);
+                bestResponse = result;
 
-            SearchResponse result = searchAtDepth(board, depth);
-            bestResponse = result;
+                checkStop();
 
-            if (shouldStop()) break;
+                long elapsed = getTimeTakenMillis();
+                String pv = result.bestMove() != null ? result.bestMove() : "";
+                if (!settings.silent())
+                    System.out.println("info depth " + depth + " score cp " + result.score() + " time " + elapsed + " pv " + pv);
 
-            long elapsed = getTimeTakenMillis();
-            String pv = result.bestMove() != null ? result.bestMove() : "";
-            System.out.println("info depth " + depth + " score cp " + result.score() + " time " + elapsed + " pv " + pv);
-
-            if (isDecisive(result)) break;
+                if (isDecisive(result)) break;
+            } catch (SearchInterruptedException e) {
+                break;
+            }
         }
 
 
@@ -76,7 +70,6 @@ public class Negamax implements Search {
     }
 
     private SearchResponse searchAtDepth(BBoard board, int depth) {
-        String bestMove = null;
         int bestScore = -INF;
         nodes = 0;
 
@@ -94,11 +87,23 @@ public class Negamax implements Search {
 
         orderer.order(nextMoves, board, new MoveOrderingContext(0, killerMoves));
 
-        for (BMove move : nextMoves) {
-            if (shouldStop()) break;
+        for (int moveIndex = 0; moveIndex < nextMoves.length; moveIndex++) {
+            BMove move = nextMoves[moveIndex];
+            checkStop();
 
             board.makeMove(move, true);
-            int score = -negamax(board, depth - 1, -beta, -alpha, 1);
+            int score;
+
+            if (moveIndex == 0) {
+                score = -negamax(board, depth - 1, -beta, -alpha, 1);
+            } else {
+                score = -negamax(board, depth - 1, -alpha - 1, -alpha, 1);
+
+                if (score > alpha && score < beta) {
+                    score = -negamax(board, depth - 1, -beta, -alpha, 1);
+                }
+            }
+
             board.undoMove(move, true);
 
             if (score > bestScore) {
@@ -107,6 +112,9 @@ public class Negamax implements Search {
             }
 
             alpha = Math.max(alpha, score);
+            if (alpha >= beta) {
+                break;
+            }
         }
 
         return new SearchResponse(bestScore, bestMove, depth, nodes, getTimeTakenMillis());
@@ -115,15 +123,23 @@ public class Negamax implements Search {
     private int negamax(BBoard board, int depth, int alpha, int beta, int ply) {
         nodes++;
 
-        if (shouldStop()) {
-            return 0;
+        if (isNthNode(1023))
+            checkStop();
+
+        if (containsTransposition(board)) {
+            TranspositionEntry entry = getEntry(board);
+            if (entry.getDepth() >= depth) {
+                if (entry.getFlag() == 0) return entry.getScore();
+                if (entry.getFlag() == 1 && entry.getScore() <= alpha) return entry.getScore();
+                if (entry.getFlag() == 2 && entry.getScore() >= beta) return entry.getScore();
+            }
         }
 
-        if (depth <= 0)
-            return evaluator.evaluate(board);
+        if (depth <= 0) return quiescence(board, alpha, beta, ply);
 
         int bestScore = -INF;
         BMove bestMove = null;
+        int originalAlpha = alpha;
 
         BMove[] nextMoves = new MoveGenerator(board).generateMoves(false);
 
@@ -136,9 +152,41 @@ public class Negamax implements Search {
                 return 0;
         }
 
-        for (BMove move : nextMoves) {
+        if (board.isDrawByRepetition()) {
+            return 0;
+        }
+
+        if (depth >= 3 && !board.isInCheck() && ply > 0 && hasNonPawnMaterial(board)) {
+            board.makeNullMove();
+            int score = -negamax(board, depth - 3, -beta, -alpha, ply + 1);
+            board.undoNullMove();
+
+            if (score >= beta) {
+                return beta;
+            }
+        }
+
+        // PVS loop
+        for (int moveIndex = 0; moveIndex < nextMoves.length; moveIndex++) {
+            BMove move = nextMoves[moveIndex];
+
+            // Capture status and color BEFORE making the move (bug fix!)
+            boolean isCapture = board.getPieceBoards()[move.targetSquare()] != 0;
+            boolean isWhite = board.isWhiteToMove();
+
             board.makeMove(move, true);
-            int score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
+            int score;
+
+            if (moveIndex == 0) {
+                score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
+            } else {
+                score = -negamax(board, depth - 1, -alpha - 1, -alpha, ply + 1);
+
+                if (score > alpha && score < beta) {
+                    score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
+                }
+            }
+
             board.undoMove(move, true);
 
             if (score > bestScore) {
@@ -148,17 +196,64 @@ public class Negamax implements Search {
 
             alpha = Math.max(alpha, score);
             if (alpha >= beta) {
-                if (killerMoves[ply][0] == null || !killerMoves[ply][0].equals(move)) {
-                    killerMoves[ply][1] = killerMoves[ply][0];
-                    killerMoves[ply][0] = move;
+                if (!isCapture) {
+                    orderer.updateHistory(move, depth, isWhite);
+                    if (ply < MAX_DEPTH_KILLER) {
+                        killerMoves[ply][1] = killerMoves[ply][0];
+                        killerMoves[ply][0] = move;
+                    }
                 }
                 break;
+            } else {
+                orderer.penalizeHistory(move, depth, isWhite, isCapture);
             }
         }
+
+        transpositionTable.put(board.getState().getZobristKey(), new TranspositionEntry(depth, bestScore, TranspositionEntry.determineFlag(beta, bestScore, originalAlpha)));
 
         return bestScore;
     }
 
+    private int quiescence(BBoard board, int alpha, int beta, int ply) {
+        nodes++;
+
+        int standPat = evaluator.evaluate(board, new EvalParams());
+
+        if (standPat >= beta) {
+            return beta;
+        }
+
+        if (alpha < standPat) {
+            alpha = standPat;
+        }
+
+        BMove[] captures = new MoveGenerator(board).generateMoves(true);
+        orderer.order(captures, board, null);
+
+        for (BMove move : captures) {
+            board.makeMove(move, true);
+            int score = -quiescence(board, -beta, -alpha, ply + 1);
+            board.undoMove(move, true);
+
+            if (score >= beta) {
+                return beta;
+            }
+            if (score > alpha) {
+                alpha = score;
+            }
+        }
+
+        return alpha;
+    }
+
+
+    private boolean containsTransposition(BBoard board) {
+        return transpositionTable.containsKey(board.getState().getZobristKey());
+    }
+
+    private TranspositionEntry getEntry(BBoard board) {
+        return transpositionTable.get(board.getState().getZobristKey());
+    }
 
     private boolean isDecisive(SearchResponse response) {
         return Math.abs(response.score()) >= MATE_SCORE - settings.maxDepth();
@@ -168,9 +263,37 @@ public class Negamax implements Search {
         return System.currentTimeMillis() - startTime;
     }
 
-    private boolean shouldStop() {
-        if (stop) return true;
-        stop = timeLimit > 0 && getTimeTakenMillis() >= timeLimit;
-        return stop;
+    private void checkStop() {
+        if (stop) throw new SearchInterruptedException();
+        if (Thread.currentThread().isInterrupted()) {
+            stop = true;
+            throw new SearchInterruptedException();
+        }
+
+        if (timeLimit > 0 && getTimeTakenMillis() >= timeLimit) {
+            stop = true;
+            throw new SearchInterruptedException();
+        }
+    }
+
+    private boolean isNthNode(int n) {
+        return (nodes & n) == 0;
+    }
+
+    private boolean hasNonPawnMaterial(BBoard board) {
+
+        boolean whiteToMove = board.isWhiteToMove();
+
+        if (checkIfHasPiece(board, whiteToMove, BPiece.rook)) return true;
+        if (checkIfHasPiece(board, whiteToMove, BPiece.bishop)) return true;
+        if (checkIfHasPiece(board, whiteToMove, BPiece.knight)) return true;
+        if (checkIfHasPiece(board, whiteToMove, BPiece.queen)) return true;
+
+        return false;
+    }
+
+    private static boolean checkIfHasPiece(BBoard board, boolean whiteToMove, int pieceIndex) {
+        long bitboard = board.getBitboard(BPiece.makePiece(pieceIndex, whiteToMove));
+        return bitboard != 0;
     }
 }

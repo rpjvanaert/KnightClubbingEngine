@@ -1,4 +1,4 @@
-package knight.clubbing.opening;
+package knight.clubbing.evaluation.tune.extract;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BBoardHelper;
@@ -11,29 +11,7 @@ import java.util.List;
 
 public class PgnParser {
 
-    public static final String EVENT = "Event";
-    public static final String WHITE_ELO = "WhiteElo";
-    public static final String BLACK_ELO = "BlackElo";
-    public static final String TERMINATION = "Termination";
-
-    public static final int ELO_THRESHOLD = 2400;
-    public static final String CLASSICAL = "Classical";
-    public static final String ABANDONED = "Abandoned";
-
     private PgnParser() {}
-
-    public static boolean isWorthy(String pgn) {
-        int whiteElo = Integer.parseInt(getPgnData(pgn, WHITE_ELO));
-        int blackElo = Integer.parseInt(getPgnData(pgn, BLACK_ELO));
-
-        if (!getPgnData(pgn, EVENT).contains(CLASSICAL))
-            return false;
-
-        if (getPgnData(pgn, TERMINATION).contains(ABANDONED))
-            return false;
-
-        return whiteElo > ELO_THRESHOLD || blackElo > ELO_THRESHOLD;
-    }
 
     protected static String getPgnData(String pgn, String identifier) {
         for (String line : pgn.split("\n")) {
@@ -47,7 +25,7 @@ public class PgnParser {
     }
 
     public static PgnInfo parse(String pgn, int movesDeep) {
-        Result result = Result.parse(getPgnData(pgn, "Result"));
+        PgnResult result = PgnResult.parse(getPgnData(pgn, "Result"));
 
         List<String> notatedMoves = getNotatedMoves(pgn);
         notatedMoves = notatedMoves.subList(0, Math.min(notatedMoves.size(), movesDeep * 2));

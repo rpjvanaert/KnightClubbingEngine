@@ -1,0 +1,124 @@
+{
+  "puzzles": [
+    {
+      "fen": "6k1/4rppp/8/8/8/8/5PPP/2R3K1 w - - 0 1",
+      "bestMoves": [
+        "c1c8"
+      ],
+      "description": "White has mate in 2."
+    },
+    {
+      "fen": "6k1/5pbp/6p1/8/P1n5/1PP5/2K5/3Q4 b - - 0 1",
+      "bestMoves": [
+        "c4e3"
+      ],
+      "description": "Black can fork the king and queen with a knight move."
+    },
+    {
+      "fen": "6r1/8/1pp3PK/8/2kP4/p1P5/8/1B6 w - - 0 1",
+      "bestMoves": [
+        "b1a2"
+      ],
+      "description": "White can pin the black rook to the king, winning material."
+    },
+    {
+      "fen": "r1b2r2/2qn2k1/p2pQ3/1ppP1B2/8/2P5/PP1N2PP/R3R1K1 b - - 0 1",
+      "bestMoves": [
+        "d7e5"
+      ],
+      "description": "Black can capture queen by trapping it with the knight."
+    },
+    {
+      "fen": "6k1/4Qp2/4p1BK/4q3/1p4P1/8/8/8 b - - 0 1",
+      "bestMoves": [
+        "e5g7"
+      ],
+      "description": "Black can capture the bishop by checking the king."
+    },
+    {
+      "fen": "8/1p3ppk/5q1p/pQ6/P2b4/2B5/5PPP/7K w - - 0 1",
+      "bestMoves": [
+        "b5d3"
+      ],
+      "description": "White can win the bishop by checking and then capturing it on the next move."
+    },
+    {
+      "fen": "r3k2r/1p3ppp/2p1pn2/p7/P1BP1b1q/1QP2P2/3N2P1/R1BR2K1 b kq - 0 1",
+      "bestMoves": [
+        "f4e3"
+      ],
+      "description": "Black has mate in 2 by first checking the king with the bishop."
+    },
+    {
+      "fen": "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1",
+      "bestMoves": [
+        "h5f7"
+      ],
+      "description": "Scholar's mate, mate in 1."
+    },
+    {
+      "fen": "8/8/4k3/8/8/3K4/4P3/8 w - - 0 1",
+      "bestMoves": [
+        "d3d4",
+        "d3e4"
+      ],
+      "description": "White needs to shoulder the pawn."
+    },
+    {
+      "fen": "8/4k3/b1p2p2/2Pp1Q2/3PBKP1/4P3/q7/3N4 b - - 0 1",
+      "bestMoves": [
+        "a2h2"
+      ],
+      "description": "Black can checkmate in 2 by checking the king and then bringing in the bishop."
+    },
+    {
+      "fen": "7r/p2nkpR1/1pp5/5pB1/1PP5/5N2/P4K2/8 b - - 0 1",
+      "bestMoves": [
+        "e7f8"
+        ],
+      "description": "Black can trap the rook by moving the king, winning the bishop."
+    },
+    {
+      "fen": "1r4k1/6qp/p1p1R3/2p2p2/2P2P1b/3P1N1P/PP1Q4/5K2 b - - 0 1",
+      "bestMoves": [
+        "b8b2"
+        ],
+      "description": "Black can win the knight be pinning the queen to a checkmate threat with the rook."
+    },
+    {
+      "fen": "8/8/4Kp2/1B6/4p2k/2P5/2P3b1/8 b - - 1 2",
+      "bestMoves": [
+        "h4g5"
+      ],
+      "description": "Black has to defend his f pawn."
+    },
+    {
+      "fen": "8/8/6R1/5K1p/7P/6rk/8/8 w - - 0 1",
+      "bestMoves": [
+        "g6g3"
+      ],
+      "description": "White has winning endgame with king opposition after trading off the rook."
+    },
+    {
+      "fen": "8/5pK1/4k3/p6P/1pp5/P7/1P3P2/8 b - - 0 1",
+      "bestMoves": [
+        "c4c3"
+      ],
+      "description": "Black can create a passed pawn and win the endgame."
+    },
+    {
+      "fen": "8/p7/6pp/p2kpp1P/5PP1/N4K2/8/8 b - - 0 1",
+      "bestMoves": [
+        "f5g4"
+      ],
+        "description": "Black can create a passed pawn by exchanging pawns at g4 then h5, winning the endgame."
+    },
+    {
+      "fen": "8/8/8/8/5p1p/p2Q1P1P/1q4PK/5k2 b - - 0 1",
+      "bestMoves": [
+        "f1f2"
+      ],
+      "description": "Black can win by avoid checks at f2."
+    }
+  ]
+}

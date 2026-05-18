@@ -4,6 +4,7 @@ public record SearchSettings (
         int maxDepth,
         long timeLimit,
         int threads,
-        boolean pondering
+        boolean pondering,
+        boolean silent
 ) {
 }

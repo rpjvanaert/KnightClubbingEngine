@@ -2,11 +2,8 @@ package knight.clubbing;
 
 import knight.clubbing.core.BBoard;
 import knight.clubbing.core.BMove;
-import knight.clubbing.movegen.MoveGenerator;
-import knight.clubbing.opening.OpeningService;
-import knight.clubbing.ordering.BasicMoveOrderer;
-import knight.clubbing.ordering.MoveOrderer;
-import knight.clubbing.ordering.MvvLvaFeature;
+import knight.clubbing.movegen.PrecomputedMoveData;
+import knight.clubbing.movegen.magic.PrecomputedMagics;
 import knight.clubbing.search.Negamax;
 import knight.clubbing.search.SearchResponse;
 import knight.clubbing.search.SearchSettings;
@@ -36,7 +33,29 @@ public class UCI {
     private BBoard board;
     private Thread searchThread;
     private Negamax negamax;
-    private OpeningService openingService = new OpeningService();
+
+    public UCI() {
+        init();
+    }
+
+    private static void init() {
+
+        synchronized (UCI.class) {
+
+            PrecomputedMoveData.getInstance();
+            @SuppressWarnings("unused")
+            var unused = PrecomputedMagics.ROOK_MAGICS;
+
+            // Warm-up
+            try {
+                BBoard board = new BBoard();
+                Negamax negamax = new Negamax();
+                negamax.search(board, new SearchSettings(2, 5, 1, false, true));
+            } catch (Exception ignored) {
+                // ignore
+            }
+        }
+    }
 
     protected BBoard getBoard() {
         return board;
@@ -57,33 +76,45 @@ public class UCI {
 
         switch (line) {
             case "uci": {
+                init();
                 sendCommand("id name KnightClubbing");
                 sendCommand("id author Ralf van Aert");
                 sendCommand("uciok");
                 break;
             }
             case "isready": {
+                init();
                 sendCommand("readyok");
                 break;
             }
+            case "ucinewgame": {
+                board = new BBoard();
+                break;
+            }
             case "stop": {
-                if (searchThread != null) searchThread.interrupt();
+                stopSearchThread();
                 break;
             }
             case "quit" : {
-                if (searchThread != null) searchThread.interrupt();
+                stopSearchThread();
                 System.exit(0);
                 break;
             }
             default: {
                 if (line.startsWith("position")) {
+                    stopSearchThread();
                     handlePosition(line);
                 } else if (line.startsWith("go")) {
+                    stopSearchThread();
                     handleGo(line);
                 }
                 break;
             }
         }
+    }
+
+    private void stopSearchThread() {
+        if (searchThread != null) searchThread.interrupt();
     }
 
     private void sendCommand(String line) {
@@ -129,7 +160,7 @@ public class UCI {
 
     protected void handleGo(String line) {
         int wtime = -1, btime = -1, winc = 0, binc = 0, depthInput = -1;
-        boolean whiteToMove = board.isWhiteToMove;
+        boolean whiteToMove = board.isWhiteToMove();
 
         String[] parts = line.split(" ");
         for (int i = 0; i < parts.length; i++) {
@@ -151,7 +182,7 @@ public class UCI {
                     break;
             }
         }
-        negamax = new Negamax(openingService);
+        negamax = new Negamax();
 
         int time = whiteToMove ? wtime : btime;
         int inc = whiteToMove ? winc : binc;
@@ -167,7 +198,7 @@ public class UCI {
                 } else {
                     moveTime = 60000; // 60 seconds default
                 }
-                SearchResponse response = negamax.search(board, new SearchSettings(depth, moveTime, 1, false));
+                SearchResponse response = negamax.search(board, new SearchSettings(depth, moveTime, 1, false, false));
                 move = response.bestMove();
             } catch (Throwable t) {
                 t.printStackTrace();
@@ -186,14 +217,7 @@ public class UCI {
                 if (move != null && !move.isEmpty()) {
                     sendCommand("bestmove " + move);
                 } else {
-                    BMove[] someMoves = new MoveGenerator(board).generateMoves(false);
-                    if (someMoves.length > 0) {
-                        MoveOrderer moveOrderer = new BasicMoveOrderer(new MvvLvaFeature());
-                        moveOrderer.order(someMoves, board, null);
-                        sendCommand("bestmove " + someMoves[0].getUci());
-                    } else {
-                        sendCommand("bestmove 0000");
-                    }
+                    sendCommand("bestmove 0000");
                 }
             }
         });
